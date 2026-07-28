@@ -62,12 +62,20 @@ function AuthPage() {
         });
         if (error) throw error;
         toast.success("Account created! Next: add a bio and a profile picture.");
+        void navigate({ to: "/profile" });
       } else {
         const { error } = await supabase.auth.signInWithPassword({
           email: form.email.trim(),
           password: form.password,
         });
-        if (error) throw error;
+        if (error) {
+          if (/confirm/i.test(error.message)) {
+            throw new Error(
+              "Your email is not confirmed yet. Use “Resend confirmation email” below.",
+            );
+          }
+          throw error;
+        }
         toast.success("Welcome back!");
       }
     } catch (err) {
@@ -75,6 +83,18 @@ function AuthPage() {
     } finally {
       setBusy(false);
     }
+  };
+
+  const resendConfirmation = async () => {
+    const email = form.email.trim();
+    if (!email) return toast.error("Enter your email address first.");
+    const { error } = await supabase.auth.resend({
+      type: "signup",
+      email,
+      options: { emailRedirectTo: `${window.location.origin}/profile` },
+    });
+    if (error) return toast.error(error.message);
+    toast.success("Confirmation email sent — check your inbox.");
   };
 
   return (
@@ -137,6 +157,13 @@ function AuthPage() {
             className="mt-4 w-full text-center text-xs underline"
           >
             {mode === "signin" ? "No account? Sign up" : "Already have an account? Sign in"}
+          </button>
+          <button
+            type="button"
+            onClick={() => void resendConfirmation()}
+            className="mt-2 w-full text-center text-xs text-muted-foreground underline"
+          >
+            Resend confirmation email
           </button>
         </div>
       </main>
