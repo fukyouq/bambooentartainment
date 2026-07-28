@@ -14,6 +14,44 @@ export type Database = {
   }
   public: {
     Tables: {
+      article_audit_log: {
+        Row: {
+          action: string
+          actor_id: string | null
+          article_id: string | null
+          article_title: string
+          created_at: string
+          details: Json
+          id: string
+        }
+        Insert: {
+          action: string
+          actor_id?: string | null
+          article_id?: string | null
+          article_title?: string
+          created_at?: string
+          details?: Json
+          id?: string
+        }
+        Update: {
+          action?: string
+          actor_id?: string | null
+          article_id?: string | null
+          article_title?: string
+          created_at?: string
+          details?: Json
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "article_audit_log_article_id_fkey"
+            columns: ["article_id"]
+            isOneToOne: false
+            referencedRelation: "articles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       articles: {
         Row: {
           author_id: string | null
@@ -29,6 +67,7 @@ export type Database = {
           sports_subcategory:
             | Database["public"]["Enums"]["sports_subcategory"]
             | null
+          status: Database["public"]["Enums"]["article_status"]
           title: string
           updated_at: string
         }
@@ -46,6 +85,7 @@ export type Database = {
           sports_subcategory?:
             | Database["public"]["Enums"]["sports_subcategory"]
             | null
+          status?: Database["public"]["Enums"]["article_status"]
           title: string
           updated_at?: string
         }
@@ -63,6 +103,7 @@ export type Database = {
           sports_subcategory?:
             | Database["public"]["Enums"]["sports_subcategory"]
             | null
+          status?: Database["public"]["Enums"]["article_status"]
           title?: string
           updated_at?: string
         }
@@ -138,6 +179,35 @@ export type Database = {
           username?: string
         }
         Relationships: []
+      }
+      saved_articles: {
+        Row: {
+          article_id: string
+          created_at: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          article_id: string
+          created_at?: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          article_id?: string
+          created_at?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "saved_articles_article_id_fkey"
+            columns: ["article_id"]
+            isOneToOne: false
+            referencedRelation: "articles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       site_settings: {
         Row: {
@@ -215,6 +285,7 @@ export type Database = {
         | "food"
         | "conflicts"
         | "other"
+      article_status: "draft" | "published"
       sports_subcategory:
         | "football"
         | "basketball"
@@ -364,6 +435,7 @@ export const Constants = {
         "conflicts",
         "other",
       ],
+      article_status: ["draft", "published"],
       sports_subcategory: [
         "football",
         "basketball",

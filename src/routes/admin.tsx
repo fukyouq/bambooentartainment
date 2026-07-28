@@ -14,12 +14,15 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import {
   ASSIGNABLE_ROLES,
+  AUDIT_ACTION_LABELS,
   CATEGORIES,
   ROLE_LABELS,
   ROLE_RANK,
   SPORTS_SUBCATEGORIES,
   extractKeywords,
   type Article,
+  type ArticleStatus,
+  type AuditEntry,
   type Category,
   type SportsSubcategory,
 } from "@/lib/bamboo";
@@ -66,6 +69,7 @@ function AdminPage() {
         {rank >= 4 && <SiteControl />}
         <ArticleForm authorName={profile?.username ?? "Bamboo Newsroom"} userId={user.id} />
         <ArticleList rank={rank} />
+        <ModerationQueue rank={rank} />
         <UserForm rank={rank} />
       </main>
     </div>
@@ -132,8 +136,7 @@ function ArticleForm({ authorName, userId }: { authorName: string; userId: strin
   });
   const [busy, setBusy] = useState(false);
 
-  const submit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const create = async (status: ArticleStatus) => {
     if (!form.title.trim() || !form.description.trim() || !form.eventDate || !form.category) {
       return toast.error("Title, description, event date and category are required.");
     }
@@ -141,7 +144,9 @@ function ArticleForm({ authorName, userId }: { authorName: string; userId: strin
       return toast.error("Pick a sports sub-category.");
     }
     setBusy(true);
-    const { error } = await supabase.from("articles").insert({
+    const { data, error } = await supabase
+      .from("articles")
+      .insert({
       title: form.title.trim().slice(0, 200),
       description: form.description.trim(),
       event_date: form.eventDate,
@@ -152,18 +157,29 @@ function ArticleForm({ authorName, userId }: { authorName: string; userId: strin
       keywords: extractKeywords(form.title, form.description),
       author_id: userId,
       author_name: authorName,
-    });
+        status,
+      })
+      .select("id")
+      .maybeSingle();
     setBusy(false);
     if (error) return toast.error(error.message);
-    toast.success("Article published");
+    toast.success(status === "published" ? "Article published" : "Draft saved — preview it below");
     setForm({ title: "", description: "", eventDate: "", imageUrl: "", category: "", sub: "" });
     void qc.invalidateQueries({ queryKey: ["articles"] });
     void qc.invalidateQueries({ queryKey: ["all-articles"] });
+    void qc.invalidateQueries({ queryKey: ["audit-log"] });
+    return data?.id;
   };
 
   return (
     <Section title="Add a news article">
-      <form onSubmit={submit} className="space-y-4">
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          void create("draft");
+        }}
+        className="space-y-4"
+      >
         <div>
           <Label htmlFor="title">Title</Label>
           <Input
@@ -239,9 +255,18 @@ function ArticleForm({ authorName, userId }: { authorName: string; userId: strin
             </div>
           )}
         </div>
-        <Button type="submit" disabled={busy}>
-          {busy ? "Publishing…" : "Publish article"}
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button type="submit" variant="outline" disabled={busy}>
+            {busy ? "Saving…" : "Save as draft"}
+          </Button>
+          <Button type="button" disabled={busy} onClick={() => void create("published")}>
+            {busy ? "Publishing…" : "Publish now"}
+          </Button>
+        </div>
+        <p className="text-xs text-muted-foreground">
+          Drafts are only visible to you and the newsroom — preview one from “Manage articles”, then
+          publish it when it is ready.
+        </p>
       </form>
     </Section>
   );
@@ -264,6 +289,7 @@ function ArticleList({ rank }: { rank: number }) {
   const refresh = () => {
     void qc.invalidateQueries({ queryKey: ["all-articles"] });
     void qc.invalidateQueries({ queryKey: ["articles"] });
+    void qc.invalidateQueries({ queryKey: ["audit-log"] });
   };
 
   const remove = async (id: string) => {
@@ -280,6 +306,13 @@ function ArticleList({ rank }: { rank: number }) {
     refresh();
   };
 
+  const setStatus = async (id: string, next: ArticleStatus) => {
+    const { error } = await supabase.from("articles").update({ status: next }).eq("id", id);
+    if (error) return toast.error(error.message);
+    toast.success(next === "published" ? "Article published" : "Moved back to draft");
+    refresh();
+  };
+
   return (
     <Section title="Manage articles">
       {articles.length === 0 ? (
@@ -292,13 +325,33 @@ function ArticleList({ rank }: { rank: number }) {
               className="flex flex-wrap items-center justify-between gap-3 border-b border-border pb-3"
             >
               <div className="min-w-0">
-                <p className="truncate text-sm font-semibold">{a.title}</p>
+                <p className="truncate text-sm font-semibold">
+                  {a.title}
+                  {a.status === "draft" && (
+                    <span className="ml-2 bg-ember px-1.5 py-0.5 text-[10px] font-bold uppercase text-ember-foreground">
+                      Draft
+                    </span>
+                  )}
+                </p>
                 <p className="text-xs text-muted-foreground">
                   {a.category} · {a.event_date} · {a.author_name}
                   {a.blacklisted ? " · blacklisted" : ""}
                 </p>
               </div>
               <div className="flex gap-2">
+                <Button size="sm" variant="outline" asChild>
+                  <Link to="/article/$articleId" params={{ articleId: a.id }}>
+                    Preview
+                  </Link>
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={() =>
+                    void setStatus(a.id, a.status === "published" ? "draft" : "published")
+                  }
+                >
+                  {a.status === "published" ? "Unpublish" : "Publish"}
+                </Button>
                 {rank >= 3 && (
                   <Button
                     size="sm"
@@ -324,6 +377,141 @@ function ArticleList({ rank }: { rank: number }) {
 
 function UserForm({ rank }: { rank: number }) {
   const addUser = useServerFn(createStaffUser);
+  return <UserFormInner rank={rank} addUser={addUser} />;
+}
+
+function ModerationQueue({ rank }: { rank: number }) {
+  const qc = useQueryClient();
+
+  const { data: flagged = [] } = useQuery({
+    queryKey: ["all-articles"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("articles")
+        .select("*")
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return (data ?? []) as Article[];
+    },
+    select: (rows) => rows.filter((a) => a.blacklisted || a.status === "draft"),
+  });
+
+  const { data: log = [] } = useQuery({
+    queryKey: ["audit-log"],
+    enabled: rank >= 2,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("article_audit_log")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .limit(60);
+      if (error) throw error;
+      return (data ?? []) as unknown as AuditEntry[];
+    },
+  });
+
+  const act = async (
+    id: string,
+    patch: { blacklisted?: boolean; status?: ArticleStatus },
+    message: string,
+  ) => {
+    const { error } = await supabase.from("articles").update(patch).eq("id", id);
+    if (error) return toast.error(error.message);
+    toast.success(message);
+    void qc.invalidateQueries({ queryKey: ["all-articles"] });
+    void qc.invalidateQueries({ queryKey: ["articles"] });
+    void qc.invalidateQueries({ queryKey: ["audit-log"] });
+  };
+
+  return (
+    <Section title="Moderation queue">
+      {flagged.length === 0 ? (
+        <p className="text-sm text-muted-foreground">
+          Nothing waiting for review — no drafts and no blacklisted articles.
+        </p>
+      ) : (
+        <ul className="space-y-3">
+          {flagged.map((a) => (
+            <li
+              key={a.id}
+              className="flex flex-wrap items-center justify-between gap-3 border-b border-border pb-3"
+            >
+              <div className="min-w-0">
+                <p className="truncate text-sm font-semibold">{a.title}</p>
+                <p className="text-xs text-muted-foreground">
+                  {a.blacklisted ? "Blacklisted" : "Draft"} · {a.category} · {a.author_name}
+                </p>
+              </div>
+              <div className="flex gap-2">
+                <Button size="sm" variant="outline" asChild>
+                  <Link to="/article/$articleId" params={{ articleId: a.id }}>
+                    Review
+                  </Link>
+                </Button>
+                {a.blacklisted
+                  ? rank >= 3 && (
+                      <Button
+                        size="sm"
+                        onClick={() =>
+                          void act(a.id, { blacklisted: false }, "Article restored")
+                        }
+                      >
+                        Approve &amp; restore
+                      </Button>
+                    )
+                  : (
+                      <Button
+                        size="sm"
+                        onClick={() =>
+                          void act(a.id, { status: "published" }, "Draft published")
+                        }
+                      >
+                        Approve &amp; publish
+                      </Button>
+                    )}
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      <h3 className="mt-8 border-t-4 border-news-red pt-2 text-sm font-bold uppercase tracking-wide">
+        Audit log
+      </h3>
+      {rank < 2 ? (
+        <p className="mt-3 text-xs text-muted-foreground">
+          Supervisors and above can read the audit log.
+        </p>
+      ) : log.length === 0 ? (
+        <p className="mt-3 text-xs text-muted-foreground">No recorded changes yet.</p>
+      ) : (
+        <ul className="mt-3 divide-y divide-border border-b border-border text-sm">
+          {log.map((entry) => (
+            <li key={entry.id} className="flex flex-wrap items-baseline gap-2 py-2">
+              <span className="font-semibold">
+                {AUDIT_ACTION_LABELS[entry.action] ?? entry.action}
+              </span>
+              <span className="min-w-0 flex-1 truncate text-muted-foreground">
+                {entry.article_title || "(deleted article)"}
+              </span>
+              <span className="text-xs text-muted-foreground">
+                {new Date(entry.created_at).toLocaleString()}
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </Section>
+  );
+}
+
+function UserFormInner({
+  rank,
+  addUser,
+}: {
+  rank: number;
+  addUser: ReturnType<typeof useServerFn<typeof createStaffUser>>;
+}) {
   const [form, setForm] = useState({
     fullName: "",
     username: "",

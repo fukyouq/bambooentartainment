@@ -3,6 +3,8 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { OrangeHeader } from "@/components/OrangeHeader";
+import { SiteFooter } from "@/components/SiteFooter";
+import { ArticleActions } from "@/components/ArticleActions";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
@@ -80,19 +82,25 @@ function ArticlePage() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="flex min-h-screen flex-col bg-background">
       <OrangeHeader />
-      <main className="mx-auto max-w-3xl px-4 py-8">
+      <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-8">
         {isLoading ? (
           <p className="text-sm text-muted-foreground">Loading…</p>
         ) : !article ? (
           <p className="font-typewriter text-lg font-bold">Article not found.</p>
         ) : (
           <article>
+            {article.status === "draft" && (
+              <p className="mb-4 border-l-4 border-ember bg-muted px-3 py-2 text-xs font-bold uppercase tracking-wide">
+                Draft preview — not visible to the public yet
+              </p>
+            )}
             <h1 className="text-4xl font-bold leading-[1.1] tracking-tight">{article.title}</h1>
             <p className="mt-3 border-b border-border pb-3 text-xs text-muted-foreground">
               By {article.author_name} · {new Date(article.created_at).toLocaleDateString()}
             </p>
+            <ArticleActions articleId={article.id} title={article.title} />
             {article.image_url && (
               <img
                 src={article.image_url}
@@ -145,6 +153,7 @@ function ArticlePage() {
           </ul>
         </section>
       </main>
+      <SiteFooter />
     </div>
   );
 }
