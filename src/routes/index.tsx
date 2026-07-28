@@ -26,10 +26,10 @@ export const Route = createFileRoute("/")({
 
 function Index() {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="flex min-h-screen flex-col bg-background">
       <GreenHeader />
       <NewsNav />
-      <main className="mx-auto max-w-6xl px-4 py-8">
+      <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-8">
         <ProfileGuide />
         <section className="grid gap-8 border-t-4 border-bamboo pt-4 lg:grid-cols-[minmax(0,1fr)_280px]">
           <div>
