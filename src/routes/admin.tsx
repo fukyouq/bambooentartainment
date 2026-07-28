@@ -14,12 +14,15 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import {
   ASSIGNABLE_ROLES,
+  AUDIT_ACTION_LABELS,
   CATEGORIES,
   ROLE_LABELS,
   ROLE_RANK,
   SPORTS_SUBCATEGORIES,
   extractKeywords,
   type Article,
+  type ArticleStatus,
+  type AuditEntry,
   type Category,
   type SportsSubcategory,
 } from "@/lib/bamboo";
@@ -66,6 +69,7 @@ function AdminPage() {
         {rank >= 4 && <SiteControl />}
         <ArticleForm authorName={profile?.username ?? "Bamboo Newsroom"} userId={user.id} />
         <ArticleList rank={rank} />
+        <ModerationQueue rank={rank} />
         <UserForm rank={rank} />
       </main>
     </div>
