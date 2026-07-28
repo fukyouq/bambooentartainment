@@ -136,8 +136,7 @@ function ArticleForm({ authorName, userId }: { authorName: string; userId: strin
   });
   const [busy, setBusy] = useState(false);
 
-  const submit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const create = async (status: ArticleStatus) => {
     if (!form.title.trim() || !form.description.trim() || !form.eventDate || !form.category) {
       return toast.error("Title, description, event date and category are required.");
     }
@@ -145,7 +144,9 @@ function ArticleForm({ authorName, userId }: { authorName: string; userId: strin
       return toast.error("Pick a sports sub-category.");
     }
     setBusy(true);
-    const { error } = await supabase.from("articles").insert({
+    const { data, error } = await supabase
+      .from("articles")
+      .insert({
       title: form.title.trim().slice(0, 200),
       description: form.description.trim(),
       event_date: form.eventDate,
@@ -156,18 +157,29 @@ function ArticleForm({ authorName, userId }: { authorName: string; userId: strin
       keywords: extractKeywords(form.title, form.description),
       author_id: userId,
       author_name: authorName,
-    });
+        status,
+      })
+      .select("id")
+      .maybeSingle();
     setBusy(false);
     if (error) return toast.error(error.message);
-    toast.success("Article published");
+    toast.success(status === "published" ? "Article published" : "Draft saved — preview it below");
     setForm({ title: "", description: "", eventDate: "", imageUrl: "", category: "", sub: "" });
     void qc.invalidateQueries({ queryKey: ["articles"] });
     void qc.invalidateQueries({ queryKey: ["all-articles"] });
+    void qc.invalidateQueries({ queryKey: ["audit-log"] });
+    return data?.id;
   };
 
   return (
     <Section title="Add a news article">
-      <form onSubmit={submit} className="space-y-4">
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          void create("draft");
+        }}
+        className="space-y-4"
+      >
         <div>
           <Label htmlFor="title">Title</Label>
           <Input
@@ -243,9 +255,18 @@ function ArticleForm({ authorName, userId }: { authorName: string; userId: strin
             </div>
           )}
         </div>
-        <Button type="submit" disabled={busy}>
-          {busy ? "Publishing…" : "Publish article"}
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button type="submit" variant="outline" disabled={busy}>
+            {busy ? "Saving…" : "Save as draft"}
+          </Button>
+          <Button type="button" disabled={busy} onClick={() => void create("published")}>
+            {busy ? "Publishing…" : "Publish now"}
+          </Button>
+        </div>
+        <p className="text-xs text-muted-foreground">
+          Drafts are only visible to you and the newsroom — preview one from “Manage articles”, then
+          publish it when it is ready.
+        </p>
       </form>
     </Section>
   );
@@ -268,6 +289,7 @@ function ArticleList({ rank }: { rank: number }) {
   const refresh = () => {
     void qc.invalidateQueries({ queryKey: ["all-articles"] });
     void qc.invalidateQueries({ queryKey: ["articles"] });
+    void qc.invalidateQueries({ queryKey: ["audit-log"] });
   };
 
   const remove = async (id: string) => {
@@ -284,6 +306,13 @@ function ArticleList({ rank }: { rank: number }) {
     refresh();
   };
 
+  const setStatus = async (id: string, next: ArticleStatus) => {
+    const { error } = await supabase.from("articles").update({ status: next }).eq("id", id);
+    if (error) return toast.error(error.message);
+    toast.success(next === "published" ? "Article published" : "Moved back to draft");
+    refresh();
+  };
+
   return (
     <Section title="Manage articles">
       {articles.length === 0 ? (
@@ -296,13 +325,33 @@ function ArticleList({ rank }: { rank: number }) {
               className="flex flex-wrap items-center justify-between gap-3 border-b border-border pb-3"
             >
               <div className="min-w-0">
-                <p className="truncate text-sm font-semibold">{a.title}</p>
+                <p className="truncate text-sm font-semibold">
+                  {a.title}
+                  {a.status === "draft" && (
+                    <span className="ml-2 bg-ember px-1.5 py-0.5 text-[10px] font-bold uppercase text-ember-foreground">
+                      Draft
+                    </span>
+                  )}
+                </p>
                 <p className="text-xs text-muted-foreground">
                   {a.category} · {a.event_date} · {a.author_name}
                   {a.blacklisted ? " · blacklisted" : ""}
                 </p>
               </div>
               <div className="flex gap-2">
+                <Button size="sm" variant="outline" asChild>
+                  <Link to="/article/$articleId" params={{ articleId: a.id }}>
+                    Preview
+                  </Link>
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={() =>
+                    void setStatus(a.id, a.status === "published" ? "draft" : "published")
+                  }
+                >
+                  {a.status === "published" ? "Unpublish" : "Publish"}
+                </Button>
                 {rank >= 3 && (
                   <Button
                     size="sm"
