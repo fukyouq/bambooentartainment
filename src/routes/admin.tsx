@@ -410,7 +410,11 @@ function ModerationQueue({ rank }: { rank: number }) {
     },
   });
 
-  const act = async (id: string, patch: Record<string, unknown>, message: string) => {
+  const act = async (
+    id: string,
+    patch: { blacklisted?: boolean; status?: ArticleStatus },
+    message: string,
+  ) => {
     const { error } = await supabase.from("articles").update(patch).eq("id", id);
     if (error) return toast.error(error.message);
     toast.success(message);
