@@ -377,6 +377,137 @@ function ArticleList({ rank }: { rank: number }) {
 
 function UserForm({ rank }: { rank: number }) {
   const addUser = useServerFn(createStaffUser);
+  return <UserFormInner rank={rank} addUser={addUser} />;
+}
+
+function ModerationQueue({ rank }: { rank: number }) {
+  const qc = useQueryClient();
+
+  const { data: flagged = [] } = useQuery({
+    queryKey: ["all-articles"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("articles")
+        .select("*")
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return (data ?? []) as Article[];
+    },
+    select: (rows) => rows.filter((a) => a.blacklisted || a.status === "draft"),
+  });
+
+  const { data: log = [] } = useQuery({
+    queryKey: ["audit-log"],
+    enabled: rank >= 2,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("article_audit_log")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .limit(60);
+      if (error) throw error;
+      return (data ?? []) as unknown as AuditEntry[];
+    },
+  });
+
+  const act = async (id: string, patch: Record<string, unknown>, message: string) => {
+    const { error } = await supabase.from("articles").update(patch).eq("id", id);
+    if (error) return toast.error(error.message);
+    toast.success(message);
+    void qc.invalidateQueries({ queryKey: ["all-articles"] });
+    void qc.invalidateQueries({ queryKey: ["articles"] });
+    void qc.invalidateQueries({ queryKey: ["audit-log"] });
+  };
+
+  return (
+    <Section title="Moderation queue">
+      {flagged.length === 0 ? (
+        <p className="text-sm text-muted-foreground">
+          Nothing waiting for review — no drafts and no blacklisted articles.
+        </p>
+      ) : (
+        <ul className="space-y-3">
+          {flagged.map((a) => (
+            <li
+              key={a.id}
+              className="flex flex-wrap items-center justify-between gap-3 border-b border-border pb-3"
+            >
+              <div className="min-w-0">
+                <p className="truncate text-sm font-semibold">{a.title}</p>
+                <p className="text-xs text-muted-foreground">
+                  {a.blacklisted ? "Blacklisted" : "Draft"} · {a.category} · {a.author_name}
+                </p>
+              </div>
+              <div className="flex gap-2">
+                <Button size="sm" variant="outline" asChild>
+                  <Link to="/article/$articleId" params={{ articleId: a.id }}>
+                    Review
+                  </Link>
+                </Button>
+                {a.blacklisted
+                  ? rank >= 3 && (
+                      <Button
+                        size="sm"
+                        onClick={() =>
+                          void act(a.id, { blacklisted: false }, "Article restored")
+                        }
+                      >
+                        Approve &amp; restore
+                      </Button>
+                    )
+                  : (
+                      <Button
+                        size="sm"
+                        onClick={() =>
+                          void act(a.id, { status: "published" }, "Draft published")
+                        }
+                      >
+                        Approve &amp; publish
+                      </Button>
+                    )}
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      <h3 className="mt-8 border-t-4 border-news-red pt-2 text-sm font-bold uppercase tracking-wide">
+        Audit log
+      </h3>
+      {rank < 2 ? (
+        <p className="mt-3 text-xs text-muted-foreground">
+          Supervisors and above can read the audit log.
+        </p>
+      ) : log.length === 0 ? (
+        <p className="mt-3 text-xs text-muted-foreground">No recorded changes yet.</p>
+      ) : (
+        <ul className="mt-3 divide-y divide-border border-b border-border text-sm">
+          {log.map((entry) => (
+            <li key={entry.id} className="flex flex-wrap items-baseline gap-2 py-2">
+              <span className="font-semibold">
+                {AUDIT_ACTION_LABELS[entry.action] ?? entry.action}
+              </span>
+              <span className="min-w-0 flex-1 truncate text-muted-foreground">
+                {entry.article_title || "(deleted article)"}
+              </span>
+              <span className="text-xs text-muted-foreground">
+                {new Date(entry.created_at).toLocaleString()}
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </Section>
+  );
+}
+
+function UserFormInner({
+  rank,
+  addUser,
+}: {
+  rank: number;
+  addUser: ReturnType<typeof useServerFn<typeof createStaffUser>>;
+}) {
   const [form, setForm] = useState({
     fullName: "",
     username: "",
