@@ -9,13 +9,13 @@ export function GreenHeader() {
   const { user, profile, role, rank, signOut } = useAuth();
 
   return (
-    <header className="bg-bamboo text-bamboo-foreground">
-      <div className="mx-auto grid max-w-6xl grid-cols-[minmax(0,1fr)_auto] items-center gap-4 px-4 py-3">
+    <header className="border-b-4 border-bamboo-light bg-bamboo text-bamboo-foreground">
+      <div className="mx-auto grid max-w-6xl grid-cols-[minmax(0,1fr)_auto] items-center gap-4 px-4 py-2.5">
         <Link to="/" className="flex min-w-0 items-center gap-3">
           <img
             src={logoAsset.url}
             alt="Bamboo Entertainment logo"
-            className="h-12 w-12 shrink-0 rounded-sm bg-bamboo-foreground/95 object-contain p-1"
+            className="h-11 w-11 shrink-0 bg-bamboo-foreground/95 object-contain p-1"
           />
           <span className="truncate font-typewriter text-lg font-bold tracking-tight sm:text-2xl">
             Bamboo Entartainment

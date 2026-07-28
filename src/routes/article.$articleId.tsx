@@ -89,15 +89,18 @@ function ArticlePage() {
           <p className="font-typewriter text-lg font-bold">Article not found.</p>
         ) : (
           <article>
-            <h1 className="font-typewriter text-3xl font-bold leading-tight">{article.title}</h1>
+            <h1 className="text-4xl font-bold leading-[1.1] tracking-tight">{article.title}</h1>
+            <p className="mt-3 border-b border-border pb-3 text-xs text-muted-foreground">
+              By {article.author_name} · {new Date(article.created_at).toLocaleDateString()}
+            </p>
             {article.image_url && (
               <img
                 src={article.image_url}
                 alt={article.title}
-                className="mt-5 w-full rounded-md object-cover"
+                className="mt-5 w-full object-cover"
               />
             )}
-            <p className="mt-5 whitespace-pre-line text-base leading-relaxed text-foreground/85">
+            <p className="mt-5 whitespace-pre-line text-lg leading-relaxed text-foreground/85">
               {article.description}
             </p>
             <footer className="mt-8 border-t border-border pt-4 text-xs text-muted-foreground">
@@ -111,7 +114,9 @@ function ArticlePage() {
         )}
 
         <section className="mt-10">
-          <h2 className="font-typewriter text-lg font-bold text-bamboo">Comments</h2>
+          <h2 className="border-t-4 border-bamboo pt-2 text-lg font-bold tracking-tight">
+            Comments
+          </h2>
           {user ? (
             <div className="mt-3 space-y-2">
               <Textarea
@@ -132,7 +137,7 @@ function ArticlePage() {
           )}
           <ul className="mt-6 space-y-4">
             {comments.map((c) => (
-              <li key={c.id} className="rounded-md border border-border bg-card p-3">
+              <li key={c.id} className="border border-border bg-card p-3">
                 <p className="text-xs font-semibold">{c.username}</p>
                 <p className="mt-1 text-sm">{c.content}</p>
               </li>

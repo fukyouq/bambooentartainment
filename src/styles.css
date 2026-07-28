@@ -27,6 +27,8 @@
   --color-bamboo-light: var(--bamboo-light);
   --color-ember: var(--ember);
   --color-ember-foreground: var(--ember-foreground);
+  --color-news-red: var(--news-red);
+  --color-news-red-foreground: var(--news-red-foreground);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
@@ -69,7 +71,7 @@
 }
 
 :root {
-  --radius: 0.625rem;
+  --radius: 0rem;
   --background: oklch(0.985 0.008 120);
   --foreground: oklch(0.19 0.03 150);
   --bamboo: oklch(0.3 0.06 152);
@@ -77,6 +79,8 @@
   --bamboo-light: oklch(0.68 0.19 145);
   --ember: oklch(0.68 0.19 48);
   --ember-foreground: oklch(0.16 0.02 60);
+  --news-red: oklch(0.53 0.22 26);
+  --news-red-foreground: oklch(0.99 0.01 60);
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.129 0.042 264.695);
   --popover: oklch(1 0 0);
