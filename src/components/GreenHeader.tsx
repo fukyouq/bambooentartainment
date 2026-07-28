@@ -1,6 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { Newspaper } from "lucide-react";
-import logoAsset from "@/assets/bamboo-logo.png.asset.json";
+import logoAsset from "@/assets/bamboo-mark.png.asset.json";
 import { SquareIconButton } from "./SquareIconButton";
 import { useAuth } from "@/hooks/useAuth";
 import { ROLE_LABELS } from "@/lib/bamboo";
@@ -14,8 +14,10 @@ export function GreenHeader() {
         <Link to="/" className="flex min-w-0 items-center gap-3">
           <img
             src={logoAsset.url}
-            alt="Bamboo Entertainment logo"
-            className="h-11 w-11 shrink-0 bg-bamboo-foreground/95 object-contain p-1"
+            alt="Bamboo Entartainment logo"
+            width={44}
+            height={44}
+            className="h-11 w-11 shrink-0 bg-bamboo-foreground object-contain p-1.5"
           />
           <span className="truncate font-typewriter text-lg font-bold tracking-tight sm:text-2xl">
             Bamboo Entartainment
