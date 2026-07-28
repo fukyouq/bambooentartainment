@@ -53,7 +53,7 @@ function AuthPage() {
           email: parsed.data.email,
           password: parsed.data.password,
           options: {
-            emailRedirectTo: window.location.origin,
+            emailRedirectTo: `${window.location.origin}/profile`,
             data: {
               username: parsed.data.username,
               phone_number: parsed.data.phone || null,
@@ -62,7 +62,6 @@ function AuthPage() {
         });
         if (error) throw error;
         toast.success("Account created! Next: add a bio and a profile picture.");
-        void navigate({ to: "/profile" });
       } else {
         const { error } = await supabase.auth.signInWithPassword({
           email: form.email.trim(),
