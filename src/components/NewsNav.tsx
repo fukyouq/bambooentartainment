@@ -3,7 +3,6 @@ import { Link } from "@tanstack/react-router";
 const LINKS = [
   { to: "/", label: "Home" },
   { to: "/news", label: "News" },
-  { to: "/news", label: "Sport", search: undefined },
 ] as const;
 
 /** BBC-style secondary navigation strip that sits under the masthead. */
@@ -11,9 +10,9 @@ export function NewsNav() {
   return (
     <nav className="border-b border-border bg-card">
       <div className="mx-auto flex max-w-6xl items-stretch gap-0 overflow-x-auto px-4">
-        {LINKS.map((l, i) => (
+        {LINKS.map((l) => (
           <Link
-            key={`${l.to}-${i}`}
+            key={l.to}
             to={l.to}
             activeOptions={{ exact: true }}
             activeProps={{ className: "border-bamboo text-foreground" }}
