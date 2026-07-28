@@ -75,7 +75,29 @@ export interface Article {
   author_name: string;
   blacklisted: boolean;
   created_at: string;
+  status: ArticleStatus;
 }
+
+export type ArticleStatus = "draft" | "published";
+
+export interface AuditEntry {
+  id: string;
+  article_id: string | null;
+  article_title: string;
+  actor_id: string | null;
+  action: string;
+  details: Record<string, unknown> | null;
+  created_at: string;
+}
+
+export const AUDIT_ACTION_LABELS: Record<string, string> = {
+  created_draft: "Draft created",
+  published: "Published",
+  unpublished: "Moved back to draft",
+  blacklisted: "Blacklisted",
+  restored: "Restored from blacklist",
+  edited: "Edited",
+};
 
 const STOP_WORDS = new Set([
   "the","a","an","of","in","on","for","to","and","or","is","are","was","were","with","at","by","from","as","it","this","that",

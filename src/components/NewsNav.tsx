@@ -3,6 +3,7 @@ import { Link } from "@tanstack/react-router";
 const LINKS = [
   { to: "/", label: "Home" },
   { to: "/news", label: "News" },
+  { to: "/profile", label: "Profile" },
 ] as const;
 
 /** BBC-style secondary navigation strip that sits under the masthead. */
