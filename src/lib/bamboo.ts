@@ -132,3 +132,46 @@ export function searchArticles(articles: Article[], query: string): Article[] {
     .sort((a, b) => b.score - a.score)
     .map((r) => r.article);
 }
+
+export interface NewsFilters {
+  category: Category | "all";
+  sub: SportsSubcategory | "all";
+  author: string;
+  query: string;
+}
+
+export const EMPTY_FILTERS: NewsFilters = {
+  category: "breaking_news",
+  sub: "all",
+  author: "all",
+  query: "",
+};
+
+/** Applies category / sport / author filters, then keyword scoring for the query. */
+export function filterArticles(articles: Article[], f: NewsFilters): Article[] {
+  let list = articles;
+  if (f.category !== "all") list = list.filter((a) => a.category === f.category);
+  if (f.sub !== "all") list = list.filter((a) => a.sports_subcategory === f.sub);
+  if (f.author !== "all") list = list.filter((a) => a.author_name === f.author);
+  if (f.query.trim()) list = searchArticles(list, f.query);
+  return list;
+}
+
+export function authorsOf(articles: Article[]): string[] {
+  return Array.from(new Set(articles.map((a) => a.author_name))).sort();
+}
+
+/** Autocomplete suggestions drawn from headlines, keywords and authors. */
+export function suggestFor(articles: Article[], raw: string, limit = 8): string[] {
+  const q = raw.trim().toLowerCase();
+  if (q.length < 2) return [];
+  const pool = new Set<string>();
+  for (const a of articles) {
+    for (const k of a.keywords) if (k.startsWith(q)) pool.add(k);
+    if (a.title.toLowerCase().includes(q)) pool.add(a.title);
+    if (a.author_name.toLowerCase().includes(q)) pool.add(a.author_name);
+  }
+  return Array.from(pool)
+    .sort((a, b) => a.length - b.length)
+    .slice(0, limit);
+}
