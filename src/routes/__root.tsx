@@ -81,20 +81,24 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Bamboo Entertainment" },
+      { title: "Bamboo Entartainment — News & Social Media" },
       {
         name: "description",
-        content: "Bamboo Entertainment — a news medium and social media platform.",
+        content: "Bamboo Entartainment is a news medium and a social media app and site, all in one place.",
       },
       { name: "author", content: "Bamboo Entertainment" },
-      { property: "og:title", content: "Bamboo Entertainment" },
+      { property: "og:title", content: "Bamboo Entartainment — News & Social Media" },
       {
         property: "og:description",
-        content: "Bamboo Entertainment — a news medium and social media platform.",
+        content: "Bamboo Entartainment is a news medium and a social media app and site, all in one place.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
       { name: "twitter:site", content: "@Lovable" },
+      { name: "twitter:title", content: "Bamboo Entartainment — News & Social Media" },
+      { name: "twitter:description", content: "Bamboo Entartainment is a news medium and a social media app and site, all in one place." },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/e76dd7ec-99a5-4c4c-be4f-9e74fb88ba53/id-preview-1b3d8bc5--9a120d20-3863-4395-8cf3-58ebad87232e.lovable.app-1785260819766.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/e76dd7ec-99a5-4c4c-be4f-9e74fb88ba53/id-preview-1b3d8bc5--9a120d20-3863-4395-8cf3-58ebad87232e.lovable.app-1785260819766.png" },
     ],
     links: [
       {
@@ -107,7 +111,6 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         rel: "stylesheet",
         href: "https://fonts.googleapis.com/css2?family=Courier+Prime:wght@400;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap",
       },
-      { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
     ],
   }),
   shellComponent: RootShell,
