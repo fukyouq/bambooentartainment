@@ -1,24 +1,47 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { GreenHeader } from "@/components/GreenHeader";
+import { ProfileGuide } from "@/components/ProfileGuide";
 
-// No head() here: the home route inherits title/description/og/twitter from
-// __root.tsx, and ships no og:image so serve-time hosting can inject the
-// project's social preview (explicit og:image or latest screenshot).
 export const Route = createFileRoute("/")({
+  head: () => ({
+    meta: [
+      { title: "Bamboo Entartainment — News & Social Media" },
+      {
+        name: "description",
+        content:
+          "Bamboo Entartainment is a news medium and a social media app and site, all in one place.",
+      },
+      { property: "og:title", content: "Bamboo Entartainment — News & Social Media" },
+      {
+        property: "og:description",
+        content:
+          "Bamboo Entartainment is a news medium and a social media app and site, all in one place.",
+      },
+    ],
+  }),
   component: Index,
 });
 
-// IMPORTANT: Replace this placeholder. See ./README.md for routing conventions.
 function Index() {
   return (
-    <div
-      className="flex min-h-screen items-center justify-center"
-      style={{ backgroundColor: "#fcfbf8" }}
-    >
-      <img
-        data-lovable-blank-page-placeholder="REMOVE_THIS"
-        src="https://cdn.gpteng.co/blank-app-v1.svg"
-        alt="Your app will live here!"
-      />
+    <div className="min-h-screen bg-background">
+      <GreenHeader />
+      <main className="mx-auto max-w-6xl px-4 py-12">
+        <ProfileGuide />
+        <section className="rounded-lg border border-border bg-card p-8 shadow-sm">
+          <h2 className="font-typewriter text-3xl font-bold text-bamboo">Who are we?</h2>
+          <p className="mt-4 max-w-3xl text-base leading-relaxed text-foreground/80">
+            We are Bamboo Entartainment, we are a News Medium and a Social Media app and site, our
+            Social Media site is like "Youtube", "Tiktok" and "Twitter/X" at the same time.
+          </p>
+          <Link
+            to="/news"
+            className="mt-6 inline-flex rounded-sm bg-ember px-5 py-2.5 font-typewriter text-sm font-bold text-ember-foreground"
+          >
+            Read Bamboo News
+          </Link>
+        </section>
+      </main>
     </div>
   );
 }

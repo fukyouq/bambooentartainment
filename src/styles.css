@@ -20,6 +20,13 @@
 
 @theme inline {
   --radius-sm: calc(var(--radius) - 4px);
+  --font-typewriter: "Courier Prime", "Courier New", monospace;
+  --font-sans: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+  --color-bamboo: var(--bamboo);
+  --color-bamboo-foreground: var(--bamboo-foreground);
+  --color-bamboo-light: var(--bamboo-light);
+  --color-ember: var(--ember);
+  --color-ember-foreground: var(--ember-foreground);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
@@ -63,20 +70,25 @@
 
 :root {
   --radius: 0.625rem;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.129 0.042 264.695);
+  --background: oklch(0.985 0.008 120);
+  --foreground: oklch(0.19 0.03 150);
+  --bamboo: oklch(0.3 0.06 152);
+  --bamboo-foreground: oklch(0.97 0.02 120);
+  --bamboo-light: oklch(0.68 0.19 145);
+  --ember: oklch(0.68 0.19 48);
+  --ember-foreground: oklch(0.16 0.02 60);
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.129 0.042 264.695);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.129 0.042 264.695);
-  --primary: oklch(0.208 0.042 265.755);
-  --primary-foreground: oklch(0.984 0.003 247.858);
+  --primary: oklch(0.3 0.06 152);
+  --primary-foreground: oklch(0.97 0.02 120);
   --secondary: oklch(0.968 0.007 247.896);
   --secondary-foreground: oklch(0.208 0.042 265.755);
   --muted: oklch(0.968 0.007 247.896);
   --muted-foreground: oklch(0.554 0.046 257.417);
-  --accent: oklch(0.968 0.007 247.896);
-  --accent-foreground: oklch(0.208 0.042 265.755);
+  --accent: oklch(0.68 0.19 48);
+  --accent-foreground: oklch(0.16 0.02 60);
   --destructive: oklch(0.577 0.245 27.325);
   --destructive-foreground: oklch(0.984 0.003 247.858);
   --border: oklch(0.929 0.013 255.508);
@@ -140,5 +152,10 @@
   body {
     background-color: var(--color-background);
     color: var(--color-foreground);
+    font-family: var(--font-sans);
   }
+}
+
+@utility font-typewriter {
+  font-family: var(--font-typewriter);
 }

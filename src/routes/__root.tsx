@@ -11,6 +11,10 @@ import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
+import { AuthProvider, useAuth } from "@/hooks/useAuth";
+import { Toaster } from "@/components/ui/sonner";
+import { supabase } from "@/integrations/supabase/client";
+import { useQuery } from "@tanstack/react-query";
 
 function NotFoundComponent() {
   return (
@@ -77,11 +81,17 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Lovable App" },
-      { name: "description", content: "Lovable Generated Project" },
-      { name: "author", content: "Lovable" },
-      { property: "og:title", content: "Lovable App" },
-      { property: "og:description", content: "Lovable Generated Project" },
+      { title: "Bamboo Entertainment" },
+      {
+        name: "description",
+        content: "Bamboo Entertainment — a news medium and social media platform.",
+      },
+      { name: "author", content: "Bamboo Entertainment" },
+      { property: "og:title", content: "Bamboo Entertainment" },
+      {
+        property: "og:description",
+        content: "Bamboo Entertainment — a news medium and social media platform.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
       { name: "twitter:site", content: "@Lovable" },
@@ -90,6 +100,12 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       {
         rel: "stylesheet",
         href: appCss,
+      },
+      { rel: "preconnect", href: "https://fonts.googleapis.com" },
+      { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
+      {
+        rel: "stylesheet",
+        href: "https://fonts.googleapis.com/css2?family=Courier+Prime:wght@400;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap",
       },
       { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
     ],
@@ -119,8 +135,40 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
-      <Outlet />
+      <AuthProvider>
+        <SiteGate />
+        <Toaster richColors position="top-center" />
+      </AuthProvider>
     </QueryClientProvider>
   );
+}
+
+function SiteGate() {
+  const { role } = useAuth();
+  const { data } = useQuery({
+    queryKey: ["site-settings"],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("site_settings")
+        .select("is_open, closed_message")
+        .maybeSingle();
+      return data;
+    },
+  });
+
+  if (data && !data.is_open && role !== "overseer_company") {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-bamboo px-6 text-bamboo-foreground">
+        <div className="max-w-md text-center">
+          <h1 className="font-typewriter text-3xl font-bold">Bamboo Entartainment</h1>
+          <p className="mt-4 text-sm opacity-90">{data.closed_message}</p>
+        </div>
+      </div>
+    );
+  }
+
+  {
+    /* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */
+  }
+  return <Outlet />;
 }
