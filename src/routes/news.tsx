@@ -1,7 +1,7 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { Search } from "lucide-react";
+import { Search, X } from "lucide-react";
 import { OrangeHeader } from "@/components/OrangeHeader";
 import { NewsNav } from "@/components/NewsNav";
 import { SiteFooter } from "@/components/SiteFooter";
@@ -12,7 +12,9 @@ import {
   CATEGORIES,
   EMPTY_CATEGORY_MESSAGE,
   SPORTS_SUBCATEGORIES,
-  searchArticles,
+  authorsOf,
+  filterArticles,
+  suggestFor,
   type Article,
   type Category,
   type SportsSubcategory,
@@ -41,6 +43,9 @@ function NewsPage() {
   const [category, setCategory] = useState<Category>("breaking_news");
   const [sub, setSub] = useState<SportsSubcategory | "all">("all");
   const [query, setQuery] = useState("");
+  const [author, setAuthor] = useState("all");
+  const [open, setOpen] = useState(false);
+  const blurTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const { data: articles = [], isLoading } = useQuery({
     queryKey: ["articles"],
@@ -49,27 +54,41 @@ function NewsPage() {
         .from("articles")
         .select("*")
         .eq("blacklisted", false)
+        .eq("status", "published")
         .order("created_at", { ascending: false });
       if (error) throw error;
       return (data ?? []) as Article[];
     },
   });
 
-  const visible = useMemo(() => {
-    if (query.trim()) return searchArticles(articles, query);
-    let list = articles.filter((a) => a.category === category);
-    if (category === "sports" && sub !== "all") {
-      list = list.filter((a) => a.sports_subcategory === sub);
-    }
-    return list;
-  }, [articles, category, sub, query]);
+  const searching = query.trim().length > 0;
+  const authors = useMemo(() => authorsOf(articles), [articles]);
+  const suggestions = useMemo(() => suggestFor(articles, query), [articles, query]);
+
+  const visible = useMemo(
+    () =>
+      filterArticles(articles, {
+        category: searching ? "all" : category,
+        sub: category === "sports" || searching ? sub : "all",
+        author,
+        query,
+      }),
+    [articles, category, sub, author, query, searching],
+  );
+
+  const filtersActive = author !== "all" || sub !== "all" || searching;
+  const resetFilters = () => {
+    setAuthor("all");
+    setSub("all");
+    setQuery("");
+  };
 
   const [lead, ...rest] = visible;
   const withPictures = rest.filter((a) => a.image_url);
   const withoutPictures = rest.filter((a) => !a.image_url);
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="flex min-h-screen flex-col bg-background">
       <OrangeHeader />
       <NewsNav />
 
@@ -98,14 +117,89 @@ function NewsPage() {
             <Input
               value={query}
               maxLength={120}
-              onChange={(e) => setQuery(e.target.value)}
+              onChange={(e) => {
+                setQuery(e.target.value);
+                setOpen(true);
+              }}
+              onFocus={() => setOpen(true)}
+              onBlur={() => {
+                blurTimer.current = setTimeout(() => setOpen(false), 120);
+              }}
               placeholder="Search news by keywords"
               className="pl-8"
+              role="combobox"
+              aria-expanded={open && suggestions.length > 0}
+              aria-label="Search news by keywords"
             />
+            {open && suggestions.length > 0 && (
+              <ul className="absolute z-20 mt-1 max-h-64 w-full overflow-auto border border-border bg-card shadow-lg">
+                {suggestions.map((s) => (
+                  <li key={s}>
+                    <button
+                      type="button"
+                      onMouseDown={() => {
+                        if (blurTimer.current) clearTimeout(blurTimer.current);
+                        setQuery(s);
+                        setOpen(false);
+                      }}
+                      className="block w-full truncate px-3 py-2 text-left text-sm hover:bg-muted"
+                    >
+                      {s}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
         </div>
 
-        {category === "sports" && !query && (
+        <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-3 px-4 pb-3">
+          <label className="flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-muted-foreground">
+            Author
+            <select
+              value={author}
+              onChange={(e) => setAuthor(e.target.value)}
+              className="h-8 border border-input bg-background px-2 text-xs font-normal normal-case text-foreground"
+            >
+              <option value="all">All authors</option>
+              {authors.map((a) => (
+                <option key={a} value={a}>
+                  {a}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-muted-foreground">
+            Sport
+            <select
+              value={sub}
+              onChange={(e) => setSub(e.target.value as SportsSubcategory | "all")}
+              className="h-8 border border-input bg-background px-2 text-xs font-normal normal-case text-foreground"
+            >
+              <option value="all">All sports</option>
+              {SPORTS_SUBCATEGORIES.map((s) => (
+                <option key={s.value} value={s.value}>
+                  {s.label}
+                </option>
+              ))}
+            </select>
+          </label>
+          {filtersActive && (
+            <button
+              onClick={resetFilters}
+              className="flex items-center gap-1 border border-border px-2 py-1 text-xs font-bold hover:bg-muted"
+            >
+              <X className="h-3 w-3" /> Clear filters
+            </button>
+          )}
+          {searching && (
+            <span className="text-xs text-muted-foreground">
+              {visible.length} result{visible.length === 1 ? "" : "s"} across all categories
+            </span>
+          )}
+        </div>
+
+        {category === "sports" && !searching && (
           <div className="mx-auto flex max-w-6xl flex-wrap gap-2 px-4 pb-3">
             {[{ value: "all", label: "All Sports" }, ...SPORTS_SUBCATEGORIES].map((s) => (
               <button
@@ -125,14 +219,16 @@ function NewsPage() {
         )}
       </nav>
 
-      <main className="mx-auto max-w-6xl px-4 py-6">
+      <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-6">
         {isLoading ? (
           <p className="text-sm text-muted-foreground">Loading news…</p>
         ) : visible.length === 0 ? (
           <p className="border border-border bg-card p-8 text-center font-typewriter text-lg font-bold">
-            {query.trim()
+            {searching
               ? `No articles match "${query}".`
-              : (EMPTY_CATEGORY_MESSAGE[category] ?? "No articles in this category yet.")}
+              : filtersActive
+                ? "No articles match these filters."
+                : (EMPTY_CATEGORY_MESSAGE[category] ?? "No articles in this category yet.")}
           </p>
         ) : (
           <div className="grid gap-8 lg:grid-cols-[260px_minmax(0,1fr)_280px]">
