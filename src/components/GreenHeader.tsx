@@ -11,15 +11,15 @@ export function GreenHeader() {
   return (
     <header className="border-b-4 border-bamboo-light bg-bamboo text-bamboo-foreground">
       <div className="mx-auto grid max-w-6xl grid-cols-[minmax(0,1fr)_auto] items-center gap-4 px-4 py-2.5">
-        <Link to="/" className="flex min-w-0 items-center gap-3">
+        <Link to="/" className="flex min-w-0 items-center gap-2 sm:gap-3">
           <img
             src={logoAsset.url}
             alt="Bamboo Entartainment logo"
-            width={44}
-            height={44}
-            className="h-11 w-11 shrink-0 bg-bamboo-foreground object-contain p-1.5"
+            width={48}
+            height={48}
+            className="h-11 w-11 shrink-0 border border-bamboo-light bg-bamboo-light object-contain p-1.5 sm:h-12 sm:w-12"
           />
-          <span className="truncate font-typewriter text-lg font-bold tracking-tight sm:text-2xl">
+          <span className="truncate font-typewriter text-base font-bold sm:text-2xl">
             Bamboo Entartainment
           </span>
         </Link>
