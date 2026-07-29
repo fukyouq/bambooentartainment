@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Outlet, useLocation, useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { z } from "zod";
 import { GreenHeader } from "@/components/GreenHeader";
@@ -30,10 +30,15 @@ const signUpSchema = z.object({
 
 function AuthPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user } = useAuth();
   const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [form, setForm] = useState({ username: "", email: "", password: "", phone: "" });
   const [busy, setBusy] = useState(false);
+
+  if (location.pathname === "/auth/callback") {
+    return <Outlet />;
+  }
 
   useEffect(() => {
     if (user) void navigate({ to: "/" });
