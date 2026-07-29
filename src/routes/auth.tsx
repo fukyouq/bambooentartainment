@@ -53,7 +53,7 @@ function AuthPage() {
           email: parsed.data.email,
           password: parsed.data.password,
           options: {
-            emailRedirectTo: `${window.location.origin}/profile`,
+            emailRedirectTo: `${window.location.origin}/auth/callback?next=/profile`,
             data: {
               username: parsed.data.username,
               phone_number: parsed.data.phone || null,
@@ -61,7 +61,8 @@ function AuthPage() {
           },
         });
         if (error) throw error;
-        toast.success("Account created! Next: add a bio and a profile picture.");
+        toast.success("Confirmation email sent — check your inbox and spam folder. The button opens your profile after confirmation.");
+        setMode("signin");
       } else {
         const { error } = await supabase.auth.signInWithPassword({
           email: form.email.trim(),
@@ -70,7 +71,7 @@ function AuthPage() {
         if (error) {
           if (/confirm/i.test(error.message)) {
             throw new Error(
-              "Your email is not confirmed yet. Use “Resend confirmation email” below.",
+              "Your email is not confirmed yet. Use “Resend confirmation email” below, then check your inbox and spam folder.",
             );
           }
           throw error;
@@ -90,10 +91,10 @@ function AuthPage() {
     const { error } = await supabase.auth.resend({
       type: "signup",
       email,
-      options: { emailRedirectTo: `${window.location.origin}/profile` },
+      options: { emailRedirectTo: `${window.location.origin}/auth/callback?next=/profile` },
     });
     if (error) return toast.error(error.message);
-    toast.success("Confirmation email sent — check your inbox.");
+    toast.success("Confirmation email sent — check your inbox and spam folder.");
   };
 
   return (

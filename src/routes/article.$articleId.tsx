@@ -62,7 +62,7 @@ function ArticlePage() {
       const rows = data ?? [];
       const ids = Array.from(new Set(rows.map((r) => r.user_id)));
       const { data: profiles } = ids.length
-        ? await supabase.from("profiles").select("id, username").in("id", ids)
+        ? await supabase.from("public_profiles").select("id, username").in("id", ids)
         : { data: [] };
       const nameById = new Map((profiles ?? []).map((p) => [p.id, p.username]));
       return rows.map((r) => ({ ...r, username: nameById.get(r.user_id) ?? "Reader" })) as CommentRow[];
