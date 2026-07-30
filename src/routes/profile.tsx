@@ -90,14 +90,19 @@ function ProfilePage() {
       <NewsNav />
       <main id="main-content" tabIndex={-1} className="mx-auto w-full max-w-4xl flex-1 px-4 py-8">
         {loading ? (
-          <p className="text-sm text-muted-foreground">Loading…</p>
-        ) : !user ? (
-          <p className="text-sm">
-            <Link to="/auth" className="underline">
-              Sign in
-            </Link>{" "}
-            to see your profile and reading list.
+          <p role="status" className="text-sm text-muted-foreground">
+            Loading…
           </p>
+        ) : !user ? (
+          <>
+            <h1 className="font-typewriter text-3xl font-bold text-bamboo">Your profile</h1>
+            <p className="mt-3 text-sm">
+              <Link to="/auth" className="underline">
+                Sign in
+              </Link>{" "}
+              to see your profile and reading list.
+            </p>
+          </>
         ) : (
           <div className="space-y-10">
             <section className="border-t-4 border-bamboo pt-4">
