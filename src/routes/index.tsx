@@ -29,11 +29,11 @@ function Index() {
     <div className="flex min-h-screen flex-col bg-background">
       <GreenHeader />
       <NewsNav />
-      <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-8">
+      <main id="main-content" tabIndex={-1} className="mx-auto w-full max-w-6xl flex-1 px-4 py-8">
         <ProfileGuide />
         <section className="grid gap-8 border-t-4 border-bamboo pt-4 lg:grid-cols-[minmax(0,1fr)_280px]">
           <div>
-            <h2 className="text-4xl font-bold leading-[1.1] tracking-tight">Who are we?</h2>
+            <h1 className="text-4xl font-bold leading-[1.1] tracking-tight">Who are we?</h1>
             <p className="mt-4 max-w-3xl text-lg leading-relaxed text-foreground/80">
               We are Bamboo Entartainment, we are a News Medium and a Social Media app and site, our
               Social Media site is like "Youtube", "Tiktok" and "Twitter/X" at the same time.

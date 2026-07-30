@@ -83,10 +83,12 @@ function ArticlePage() {
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
-      <OrangeHeader />
-      <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-8">
+      <OrangeHeader asHeading={false} />
+      <main id="main-content" tabIndex={-1} className="mx-auto w-full max-w-3xl flex-1 px-4 py-8">
         {isLoading ? (
-          <p className="text-sm text-muted-foreground">Loading…</p>
+          <p role="status" className="text-sm text-muted-foreground">
+            Loading…
+          </p>
         ) : !article ? (
           <p className="font-typewriter text-lg font-bold">Article not found.</p>
         ) : (
@@ -98,13 +100,17 @@ function ArticlePage() {
             )}
             <h1 className="text-4xl font-bold leading-[1.1] tracking-tight">{article.title}</h1>
             <p className="mt-3 border-b border-border pb-3 text-xs text-muted-foreground">
-              By {article.author_name} · {new Date(article.created_at).toLocaleDateString()}
+              By {article.author_name} ·{" "}
+              <time dateTime={article.created_at}>
+                {new Date(article.created_at).toLocaleDateString()}
+              </time>
             </p>
             <ArticleActions articleId={article.id} title={article.title} />
             {article.image_url && (
               <img
                 src={article.image_url}
-                alt={article.title}
+                alt={`Illustration for “${article.title}”`}
+                loading="lazy"
                 className="mt-5 w-full object-cover"
               />
             )}
@@ -121,19 +127,28 @@ function ArticlePage() {
           </article>
         )}
 
-        <section className="mt-10">
-          <h2 className="border-t-4 border-bamboo pt-2 text-lg font-bold tracking-tight">
+        <section className="mt-10" aria-labelledby="comments-heading">
+          <h2
+            id="comments-heading"
+            className="border-t-4 border-bamboo pt-2 text-lg font-bold tracking-tight"
+          >
             Comments
           </h2>
           {user ? (
             <div className="mt-3 space-y-2">
+              <label htmlFor="comment-input" className="sr-only">
+                Add a comment
+              </label>
               <Textarea
+                id="comment-input"
                 value={text}
                 maxLength={1000}
                 onChange={(e) => setText(e.target.value)}
                 placeholder="Add a comment"
               />
-              <Button onClick={() => void postComment()}>Post comment</Button>
+              <Button className="min-h-11" onClick={() => void postComment()}>
+                Post comment
+              </Button>
             </div>
           ) : (
             <p className="mt-3 text-sm text-muted-foreground">
@@ -146,7 +161,12 @@ function ArticlePage() {
           <ul className="mt-6 space-y-4">
             {comments.map((c) => (
               <li key={c.id} className="border border-border bg-card p-3">
-                <p className="text-xs font-semibold">{c.username}</p>
+                <p className="text-xs font-semibold">
+                  {c.username} ·{" "}
+                  <time dateTime={c.created_at} className="font-normal text-muted-foreground">
+                    {new Date(c.created_at).toLocaleDateString()}
+                  </time>
+                </p>
                 <p className="mt-1 text-sm">{c.content}</p>
               </li>
             ))}
