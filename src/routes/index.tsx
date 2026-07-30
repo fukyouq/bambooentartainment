@@ -46,7 +46,7 @@ function Index() {
             </Link>
           </div>
           <aside className="border-t-4 border-news-red pt-2 lg:border-l lg:border-t-0 lg:border-l-border lg:pl-6 lg:pt-0">
-            <h3 className="text-lg font-bold tracking-tight">Bamboo News</h3>
+            <h2 className="text-lg font-bold tracking-tight">Bamboo News</h2>
             <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
               Breaking news, trending stories, sport, global affairs, health, food and conflicts —
               updated by our newsroom.
