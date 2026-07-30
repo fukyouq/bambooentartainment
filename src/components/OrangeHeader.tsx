@@ -1,13 +1,20 @@
 import { ArrowLeft } from "lucide-react";
 import { SquareIconButton } from "./SquareIconButton";
 
-export function OrangeHeader({ title = "Bamboo News" }: { title?: string }) {
+interface OrangeHeaderProps {
+  title?: string;
+  /** Render the masthead title as the page's <h1>. Set false when the page owns its own h1. */
+  asHeading?: boolean;
+}
+
+export function OrangeHeader({ title = "Bamboo News", asHeading = true }: OrangeHeaderProps) {
+  const Title = asHeading ? "h1" : "p";
   return (
-    <header className="border-b-4 border-ember/70 bg-ember text-ember-foreground">
+    <header role="banner" className="border-b-4 border-ember/70 bg-ember text-ember-foreground">
       <div className="mx-auto grid max-w-6xl grid-cols-[minmax(0,1fr)_auto] items-center gap-4 px-4 py-2.5">
-        <h1 className="truncate font-typewriter text-xl font-bold tracking-tight sm:text-3xl">
+        <Title className="truncate font-typewriter text-xl font-bold tracking-tight sm:text-3xl">
           {title}
-        </h1>
+        </Title>
         <SquareIconButton
           to="/"
           label="Go back to home page"
