@@ -45,7 +45,7 @@ function Index() {
               Read Bamboo News
             </Link>
           </div>
-          <aside className="border-t-4 border-news-red pt-2 lg:border-l lg:border-t-0 lg:border-l-border lg:pl-6 lg:pt-0">
+          <div className="border-t-4 border-news-red pt-2 lg:border-l lg:border-t-0 lg:border-l-border lg:pl-6 lg:pt-0">
             <h2 className="text-lg font-bold tracking-tight">Bamboo News</h2>
             <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
               Breaking news, trending stories, sport, global affairs, health, food and conflicts —
@@ -54,7 +54,7 @@ function Index() {
             <Link to="/news" className="mt-3 inline-block text-sm font-bold hover:underline">
               Go to the news front page →
             </Link>
-          </aside>
+          </div>
         </section>
       </main>
       <SiteFooter />
