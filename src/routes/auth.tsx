@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createFileRoute, Outlet, useLocation, useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -35,6 +35,9 @@ function AuthPage() {
   const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [form, setForm] = useState({ username: "", email: "", password: "", phone: "" });
   const [busy, setBusy] = useState(false);
+  const [cooldown, setCooldown] = useState(0);
+  const [sentTo, setSentTo] = useState<string | null>(null);
+  const timer = useRef<ReturnType<typeof setInterval> | null>(null);
 
   if (location.pathname === "/auth/callback") {
     return <Outlet />;
@@ -43,6 +46,14 @@ function AuthPage() {
   useEffect(() => {
     if (user) void navigate({ to: "/" });
   }, [user, navigate]);
+
+  useEffect(() => {
+    if (cooldown <= 0) return;
+    timer.current = setInterval(() => setCooldown((c) => (c <= 1 ? 0 : c - 1)), 1000);
+    return () => {
+      if (timer.current) clearInterval(timer.current);
+    };
+  }, [cooldown]);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -66,7 +77,11 @@ function AuthPage() {
           },
         });
         if (error) throw error;
-        toast.success("Confirmation email sent — check your inbox and spam folder. The button opens your profile after confirmation.");
+        setSentTo(parsed.data.email);
+        setCooldown(60);
+        toast.success(
+          "Confirmation email sent — check your inbox and spam folder. If the button in the email doesn't work, copy the full link into your browser's address bar.",
+        );
         setMode("signin");
       } else {
         const { error } = await supabase.auth.signInWithPassword({
@@ -93,12 +108,23 @@ function AuthPage() {
   const resendConfirmation = async () => {
     const email = form.email.trim();
     if (!email) return toast.error("Enter your email address first.");
+    if (cooldown > 0) {
+      return toast.error(`Please wait ${cooldown}s before requesting another email.`);
+    }
     const { error } = await supabase.auth.resend({
       type: "signup",
       email,
       options: { emailRedirectTo: `${window.location.origin}/auth/callback?next=/profile` },
     });
-    if (error) return toast.error(error.message);
+    if (error) {
+      if (/security purposes|rate limit/i.test(error.message)) {
+        setCooldown(60);
+        return toast.error("Too many requests — please wait a minute and try again.");
+      }
+      return toast.error(error.message);
+    }
+    setSentTo(email);
+    setCooldown(60);
     toast.success("Confirmation email sent — check your inbox and spam folder.");
   };
 
