@@ -92,17 +92,19 @@ function NewsPage() {
       <OrangeHeader />
       <NewsNav />
 
-      <nav className="border-b border-border bg-card">
+      <nav aria-label="News categories and filters" className="border-b border-border bg-card">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-1 px-4 py-2">
           {CATEGORIES.map((c) => (
             <button
               key={c.value}
+              type="button"
+              aria-pressed={category === c.value && !query}
               onClick={() => {
                 setCategory(c.value);
                 setQuery("");
               }}
               className={cn(
-                "border-b-4 px-3 py-2 text-sm font-bold tracking-tight transition-colors hover:bg-muted",
+                "min-h-11 border-b-4 px-3 py-2 text-sm font-bold tracking-tight transition-colors hover:bg-muted",
                 category === c.value && !query
                   ? "border-bamboo text-foreground"
                   : "border-transparent text-foreground/70",
@@ -128,13 +130,20 @@ function NewsPage() {
               placeholder="Search news by keywords"
               className="pl-8"
               role="combobox"
+              aria-controls="news-search-suggestions"
+              aria-autocomplete="list"
               aria-expanded={open && suggestions.length > 0}
               aria-label="Search news by keywords"
             />
             {open && suggestions.length > 0 && (
-              <ul className="absolute z-20 mt-1 max-h-64 w-full overflow-auto border border-border bg-card shadow-lg">
+              <ul
+                id="news-search-suggestions"
+                role="listbox"
+                aria-label="Search suggestions"
+                className="absolute z-20 mt-1 max-h-64 w-full overflow-auto border border-border bg-card shadow-lg"
+              >
                 {suggestions.map((s) => (
-                  <li key={s}>
+                  <li key={s} role="option" aria-selected={false}>
                     <button
                       type="button"
                       onMouseDown={() => {
@@ -204,9 +213,11 @@ function NewsPage() {
             {[{ value: "all", label: "All Sports" }, ...SPORTS_SUBCATEGORIES].map((s) => (
               <button
                 key={s.value}
+                type="button"
+                aria-pressed={sub === s.value}
                 onClick={() => setSub(s.value as SportsSubcategory | "all")}
                 className={cn(
-                  "border px-3 py-1 text-xs font-bold",
+                  "min-h-11 border px-3 py-1 text-xs font-bold",
                   sub === s.value
                     ? "border-ember bg-ember text-ember-foreground"
                     : "border-border bg-background text-foreground/70",
@@ -219,9 +230,11 @@ function NewsPage() {
         )}
       </nav>
 
-      <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-6">
+      <main id="main-content" tabIndex={-1} className="mx-auto w-full max-w-6xl flex-1 px-4 py-6">
         {isLoading ? (
-          <p className="text-sm text-muted-foreground">Loading news…</p>
+          <p role="status" className="text-sm text-muted-foreground">
+            Loading news…
+          </p>
         ) : visible.length === 0 ? (
           <p className="border border-border bg-card p-8 text-center font-typewriter text-lg font-bold">
             {searching

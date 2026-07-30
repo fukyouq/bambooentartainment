@@ -29,11 +29,11 @@ function Index() {
     <div className="flex min-h-screen flex-col bg-background">
       <GreenHeader />
       <NewsNav />
-      <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-8">
+      <main id="main-content" tabIndex={-1} className="mx-auto w-full max-w-6xl flex-1 px-4 py-8">
         <ProfileGuide />
         <section className="grid gap-8 border-t-4 border-bamboo pt-4 lg:grid-cols-[minmax(0,1fr)_280px]">
           <div>
-            <h2 className="text-4xl font-bold leading-[1.1] tracking-tight">Who are we?</h2>
+            <h1 className="text-4xl font-bold leading-[1.1] tracking-tight">Who are we?</h1>
             <p className="mt-4 max-w-3xl text-lg leading-relaxed text-foreground/80">
               We are Bamboo Entartainment, we are a News Medium and a Social Media app and site, our
               Social Media site is like "Youtube", "Tiktok" and "Twitter/X" at the same time.
@@ -45,8 +45,8 @@ function Index() {
               Read Bamboo News
             </Link>
           </div>
-          <aside className="border-t-4 border-news-red pt-2 lg:border-l lg:border-t-0 lg:border-l-border lg:pl-6 lg:pt-0">
-            <h3 className="text-lg font-bold tracking-tight">Bamboo News</h3>
+          <div className="border-t-4 border-news-red pt-2 lg:border-l lg:border-t-0 lg:border-l-border lg:pl-6 lg:pt-0">
+            <h2 className="text-lg font-bold tracking-tight">Bamboo News</h2>
             <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
               Breaking news, trending stories, sport, global affairs, health, food and conflicts —
               updated by our newsroom.
@@ -54,7 +54,7 @@ function Index() {
             <Link to="/news" className="mt-3 inline-block text-sm font-bold hover:underline">
               Go to the news front page →
             </Link>
-          </aside>
+          </div>
         </section>
       </main>
       <SiteFooter />

@@ -66,15 +66,40 @@ export function ArticleActions({ articleId, title }: Props) {
   };
 
   return (
-    <div className="mt-4 flex flex-wrap gap-2">
-      <Button variant="outline" size="sm" disabled={busy} onClick={() => void toggleSave()}>
-        {saved ? <BookmarkCheck className="mr-2 h-4 w-4" /> : <Bookmark className="mr-2 h-4 w-4" />}
+    <div className="mt-4 flex flex-wrap gap-2" role="group" aria-label="Article actions">
+      <Button
+        variant="outline"
+        size="sm"
+        className="min-h-11"
+        disabled={busy}
+        aria-pressed={!!saved}
+        aria-label={saved ? `Remove "${title}" from your reading list` : `Save "${title}" to your reading list`}
+        onClick={() => void toggleSave()}
+      >
+        {saved ? (
+          <BookmarkCheck aria-hidden="true" className="mr-2 h-4 w-4" />
+        ) : (
+          <Bookmark aria-hidden="true" className="mr-2 h-4 w-4" />
+        )}
         {saved ? "Saved" : "Save"}
       </Button>
-      <Button variant="outline" size="sm" onClick={() => void share()}>
-        {copied ? <Check className="mr-2 h-4 w-4" /> : <Share2 className="mr-2 h-4 w-4" />}
+      <Button
+        variant="outline"
+        size="sm"
+        className="min-h-11"
+        aria-label={`Share "${title}"`}
+        onClick={() => void share()}
+      >
+        {copied ? (
+          <Check aria-hidden="true" className="mr-2 h-4 w-4" />
+        ) : (
+          <Share2 aria-hidden="true" className="mr-2 h-4 w-4" />
+        )}
         Share
       </Button>
+      <span aria-live="polite" className="sr-only">
+        {copied ? "Link copied to clipboard" : ""}
+      </span>
     </div>
   );
 }

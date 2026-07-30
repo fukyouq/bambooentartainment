@@ -158,6 +158,30 @@
     color: var(--color-foreground);
     font-family: var(--font-sans);
   }
+
+  /* Visible keyboard focus for every interactive element. */
+  :focus-visible {
+    outline: 3px solid var(--color-ring);
+    outline-offset: 2px;
+  }
+}
+
+/* Skip link: hidden until focused by keyboard users. */
+@utility skip-link {
+  position: absolute;
+  left: 0.5rem;
+  top: -100%;
+  z-index: 100;
+  background-color: var(--color-background);
+  color: var(--color-foreground);
+  padding: 0.5rem 0.75rem;
+  font-weight: 700;
+  font-size: 0.875rem;
+  border: 2px solid var(--color-ring);
+
+  &:focus {
+    top: 0.5rem;
+  }
 }
 
 @utility font-typewriter {
