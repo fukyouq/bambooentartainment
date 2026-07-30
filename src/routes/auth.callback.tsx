@@ -56,7 +56,7 @@ function AuthCallbackPage() {
   return (
     <div className="min-h-screen bg-background">
       <GreenHeader />
-      <main className="mx-auto max-w-md px-4 py-12">
+      <main id="main-content" tabIndex={-1} className="mx-auto max-w-md px-4 py-12">
         <h1 className="font-typewriter text-2xl font-bold text-bamboo">Email confirmation</h1>
         <p className="mt-3 text-sm text-muted-foreground">{message}</p>
       </main>

@@ -88,7 +88,7 @@ function ProfilePage() {
     <div className="flex min-h-screen flex-col bg-background">
       <GreenHeader />
       <NewsNav />
-      <main className="mx-auto w-full max-w-4xl flex-1 px-4 py-8">
+      <main id="main-content" tabIndex={-1} className="mx-auto w-full max-w-4xl flex-1 px-4 py-8">
         {loading ? (
           <p className="text-sm text-muted-foreground">Loading…</p>
         ) : !user ? (

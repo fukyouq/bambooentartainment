@@ -105,7 +105,7 @@ function AuthPage() {
   return (
     <div className="min-h-screen bg-background">
       <GreenHeader />
-      <main className="mx-auto max-w-md px-4 py-12">
+      <main id="main-content" tabIndex={-1} className="mx-auto max-w-md px-4 py-12">
         <div className="rounded-lg border border-border bg-card p-6 shadow-sm">
           <h1 className="font-typewriter text-2xl font-bold text-bamboo">
             {mode === "signin" ? "Sign in" : "Sign up"}

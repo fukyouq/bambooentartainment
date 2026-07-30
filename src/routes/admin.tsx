@@ -59,7 +59,7 @@ function AdminPage() {
   return (
     <div className="min-h-screen bg-background">
       <GreenHeader />
-      <main className="mx-auto max-w-4xl space-y-8 px-4 py-10">
+      <main id="main-content" tabIndex={-1} className="mx-auto max-w-4xl space-y-8 px-4 py-10">
         <div>
           <h1 className="font-typewriter text-3xl font-bold text-bamboo">Newsroom</h1>
           <p className="mt-1 text-sm text-muted-foreground">
