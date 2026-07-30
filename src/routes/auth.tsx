@@ -192,10 +192,29 @@ function AuthPage() {
           <button
             type="button"
             onClick={() => void resendConfirmation()}
-            className="mt-2 w-full text-center text-xs text-muted-foreground underline"
+            disabled={cooldown > 0}
+            className="mt-2 w-full text-center text-xs text-muted-foreground underline disabled:opacity-50"
           >
-            Resend confirmation email
+            {cooldown > 0 ? `Resend confirmation email (${cooldown}s)` : "Resend confirmation email"}
           </button>
+          {sentTo && (
+            <div
+              aria-live="polite"
+              className="mt-4 border-l-4 border-ember bg-muted p-3 text-xs leading-relaxed"
+            >
+              <p className="font-bold">We emailed {sentTo}.</p>
+              <p className="mt-1 text-muted-foreground">
+                Check your inbox <strong>and your spam/junk folder</strong>. The email contains a
+                confirmation button and, underneath it, the same link as plain text — if the button
+                doesn't open, copy that full link and paste it into your browser's address bar. It
+                brings you back to{" "}
+                <span className="break-all font-mono">
+                  {typeof window === "undefined" ? "" : `${window.location.origin}/auth/callback`}
+                </span>
+                .
+              </p>
+            </div>
+          )}
         </div>
       </main>
     </div>
