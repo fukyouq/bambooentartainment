@@ -9,12 +9,20 @@ export function GreenHeader() {
   const { user, profile, role, rank, signOut } = useAuth();
 
   return (
-    <header className="border-b-4 border-bamboo-light bg-bamboo text-bamboo-foreground">
+    <header role="banner" className="border-b-4 border-bamboo-light bg-bamboo text-bamboo-foreground">
+      <a href="#main-content" className="skip-link">
+        Skip to main content
+      </a>
       <div className="mx-auto grid max-w-6xl grid-cols-[minmax(0,1fr)_auto] items-center gap-4 px-4 py-2.5">
-        <Link to="/" className="flex min-w-0 items-center gap-2 sm:gap-3">
+        <Link
+          to="/"
+          aria-label="Bamboo Entartainment — go to the home page"
+          className="flex min-w-0 items-center gap-2 sm:gap-3"
+        >
           <img
             src={logoAsset.url}
-            alt="Bamboo Entartainment logo"
+            alt=""
+            aria-hidden="true"
             width={48}
             height={48}
             className="h-11 w-11 shrink-0 border border-bamboo-light bg-bamboo-light object-contain p-1.5 sm:h-12 sm:w-12"
@@ -25,7 +33,7 @@ export function GreenHeader() {
         </Link>
         <div className="flex items-center gap-3">
           {user ? (
-            <div className="hidden items-center gap-3 sm:flex">
+            <nav aria-label="Account" className="hidden items-center gap-3 sm:flex">
               {rank >= 1 && (
                 <Link
                   to="/admin"
@@ -38,12 +46,13 @@ export function GreenHeader() {
                 {profile?.username ?? "Reader"} · {ROLE_LABELS[role]}
               </span>
               <button
+                type="button"
                 onClick={() => void signOut()}
                 className="font-typewriter text-xs font-bold underline underline-offset-4"
               >
                 Sign out
               </button>
-            </div>
+            </nav>
           ) : (
             <Link
               to="/auth"
