@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { Newspaper } from "lucide-react";
+import { Megaphone, Newspaper } from "lucide-react";
 import logoAsset from "@/assets/bamboo-mark.png.asset.json";
 import { SquareIconButton } from "./SquareIconButton";
 import { useAuth } from "@/hooks/useAuth";
@@ -66,6 +66,12 @@ export function GreenHeader() {
             label="Bamboo News"
             variant="ember"
             icon={<Newspaper className="h-5 w-5" />}
+          />
+          <SquareIconButton
+            to="/announcements"
+            label="Bamboo Announcements"
+            variant="news-red"
+            icon={<Megaphone className="h-5 w-5" />}
           />
         </div>
       </div>

@@ -6,7 +6,7 @@ interface Props {
   to: string;
   label: string;
   icon: ReactNode;
-  variant: "ember" | "bamboo";
+  variant: "ember" | "bamboo" | "news-red";
   align?: "left" | "right";
 }
 
@@ -22,7 +22,9 @@ export function SquareIconButton({ to, label, icon, variant, align = "right" }: 
           "flex h-11 w-11 min-h-11 min-w-11 items-center justify-center rounded-sm border-2 transition-transform hover:scale-105 active:scale-95",
           variant === "ember"
             ? "border-ember-foreground/30 bg-ember text-ember-foreground"
-            : "border-bamboo-foreground/25 bg-bamboo text-bamboo-foreground",
+            : variant === "news-red"
+              ? "border-news-red-foreground/30 bg-news-red text-news-red-foreground"
+              : "border-bamboo-foreground/25 bg-bamboo text-bamboo-foreground",
         )}
       >
         <span aria-hidden="true">{icon}</span>
