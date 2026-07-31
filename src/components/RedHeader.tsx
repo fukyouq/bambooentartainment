@@ -7,7 +7,7 @@ interface RedHeaderProps {
   asHeading?: boolean;
 }
 
-export function RedHeader({ title = "Bamboo Announcements", asHeading = true }: RedHeaderProps) {
+export function RedHeader({ title = "Sonk", asHeading = true }: RedHeaderProps) {
   const Title = asHeading ? "h1" : "p";
   return (
     <header

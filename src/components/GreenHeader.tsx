@@ -69,7 +69,7 @@ export function GreenHeader() {
           />
           <SquareIconButton
             to="/announcements"
-            label="Bamboo Announcements"
+            label="Sonk"
             variant="news-red"
             icon={<Megaphone className="h-5 w-5" />}
           />
