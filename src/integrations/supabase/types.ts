@@ -254,6 +254,97 @@ export type Database = {
         }
         Relationships: []
       }
+      sonk_comments: {
+        Row: {
+          author_id: string
+          body: string
+          created_at: string
+          id: string
+          post_id: string
+        }
+        Insert: {
+          author_id: string
+          body: string
+          created_at?: string
+          id?: string
+          post_id: string
+        }
+        Update: {
+          author_id?: string
+          body?: string
+          created_at?: string
+          id?: string
+          post_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sonk_comments_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "sonk_posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sonk_likes: {
+        Row: {
+          created_at: string
+          post_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          post_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          post_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sonk_likes_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "sonk_posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sonk_posts: {
+        Row: {
+          author_id: string
+          body: string | null
+          created_at: string
+          id: string
+          kind: Database["public"]["Enums"]["sonk_kind"]
+          media_url: string | null
+          thumbnail_url: string | null
+          title: string | null
+        }
+        Insert: {
+          author_id: string
+          body?: string | null
+          created_at?: string
+          id?: string
+          kind?: Database["public"]["Enums"]["sonk_kind"]
+          media_url?: string | null
+          thumbnail_url?: string | null
+          title?: string | null
+        }
+        Update: {
+          author_id?: string
+          body?: string | null
+          created_at?: string
+          id?: string
+          kind?: Database["public"]["Enums"]["sonk_kind"]
+          media_url?: string | null
+          thumbnail_url?: string | null
+          title?: string | null
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -310,6 +401,7 @@ export type Database = {
         | "conflicts"
         | "other"
       article_status: "draft" | "published"
+      sonk_kind: "video" | "short" | "post"
       sports_subcategory:
         | "football"
         | "basketball"
@@ -460,6 +552,7 @@ export const Constants = {
         "other",
       ],
       article_status: ["draft", "published"],
+      sonk_kind: ["video", "short", "post"],
       sports_subcategory: [
         "football",
         "basketball",
