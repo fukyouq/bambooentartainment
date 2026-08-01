@@ -1,11 +1,40 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
-import { Heart, MessageCircle, Play, Send, Share2, Trash2, Volume2, VolumeX } from "lucide-react";
+import {
+  EyeOff,
+  Flag,
+  Heart,
+  MessageCircle,
+  Play,
+  Send,
+  Share2,
+  ShieldAlert,
+  ThumbsDown,
+  Trash2,
+  UserX,
+  Volume2,
+  VolumeX,
+} from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
-import { extractHashtags, timeAgo, type SonkAuthor, type SonkKind, type SonkPost } from "@/lib/sonk";
+import {
+  extractHashtags,
+  timeAgo,
+  warningEffects,
+  type BadgeKind,
+  type SonkAuthor,
+  type SonkKind,
+  type SonkPost,
+  type SonkTarget,
+  type VerifyCategory,
+} from "@/lib/sonk";
+import { AccountMarks, EMPTY_MARKS, type MarkSet } from "./Badges";
+import { MediaPicker } from "./MediaPicker";
 import { toast } from "sonner";
+
+const focusRing =
+  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background";
 
 interface Comment {
   id: string;
@@ -13,6 +42,7 @@ interface Comment {
   author_id: string;
   body: string;
   created_at: string;
+  hidden?: boolean;
 }
 
 export interface SonkData {
@@ -20,24 +50,44 @@ export interface SonkData {
   authors: Record<string, SonkAuthor>;
   likes: Record<string, number>;
   liked: Set<string>;
+  marks: MarkSet;
+  /** Warning count per account, used to apply the warning ladder. */
+  warnings: Record<string, number>;
+  blocked: Set<string>;
   reload: () => void;
   toggleLike: (id: string) => void;
   remove: (id: string) => void;
   canDelete: (post: SonkPost) => boolean;
+  canModerate: boolean;
+  dislikeOnly: (authorId: string) => boolean;
+  likeIcon: (authorId: string, isLiked: boolean) => ReactNode;
+  report: (target: SonkTarget, id: string) => void;
+  hide: (target: SonkTarget, id: string, hidden: boolean) => void;
+  block: (authorId: string) => void;
 }
 
-export function useSonk(): SonkData & { loading: boolean } {
-  const { user, rank } = useAuth();
+/**
+ * Loads the Sonk timeline plus everything the moderation and badge systems need.
+ * When `search` is empty, accounts on their 2nd warning are dropped from the
+ * algorithm; a direct search still surfaces them.
+ */
+export function useSonk(search = ""): SonkData & { loading: boolean } {
+  const { user, sonkRank } = useAuth();
   const [posts, setPosts] = useState<SonkPost[]>([]);
   const [authors, setAuthors] = useState<Record<string, SonkAuthor>>({});
   const [likes, setLikes] = useState<Record<string, number>>({});
   const [liked, setLiked] = useState<Set<string>>(new Set());
+  const [marks, setMarks] = useState<MarkSet>(EMPTY_MARKS);
+  const [warnings, setWarnings] = useState<Record<string, number>>({});
+  const [blocked, setBlocked] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
 
   const reload = async () => {
     const { data: rows } = await supabase
       .from("sonk_posts")
-      .select("id, author_id, kind, title, body, media_url, thumbnail_url, created_at")
+      .select(
+        "id, author_id, kind, title, body, media_url, thumbnail_url, created_at, hidden, blacklisted",
+      )
       .order("created_at", { ascending: false })
       .limit(200);
     const list = (rows ?? []) as SonkPost[];
@@ -45,13 +95,27 @@ export function useSonk(): SonkData & { loading: boolean } {
 
     const ids = Array.from(new Set(list.map((p) => p.author_id)));
     if (ids.length) {
-      const { data: profs } = await supabase
-        .from("public_profiles")
-        .select("id, username, avatar_url")
-        .in("id", ids);
+      const [{ data: profs }, { data: verifs }, { data: badgeRows }, { data: statuses }] =
+        await Promise.all([
+          supabase.from("public_profiles").select("id, username, avatar_url").in("id", ids),
+          supabase.from("sonk_verification").select("user_id, category").in("user_id", ids),
+          supabase.from("sonk_badges").select("user_id, badge").in("user_id", ids),
+          supabase.from("sonk_status").select("user_id, warning_count").in("user_id", ids),
+        ]);
       const map: Record<string, SonkAuthor> = {};
       for (const p of (profs ?? []) as SonkAuthor[]) map[p.id] = p;
       setAuthors(map);
+
+      const verification: Record<string, VerifyCategory> = {};
+      for (const v of verifs ?? []) verification[v.user_id] = v.category as VerifyCategory;
+      const badges: Record<string, BadgeKind[]> = {};
+      for (const b of badgeRows ?? [])
+        badges[b.user_id] = [...(badges[b.user_id] ?? []), b.badge as BadgeKind];
+      setMarks({ verification, badges });
+
+      const warn: Record<string, number> = {};
+      for (const s of statuses ?? []) warn[s.user_id] = s.warning_count;
+      setWarnings(warn);
     }
 
     const { data: likeRows } = await supabase.from("sonk_likes").select("post_id, user_id");
@@ -63,6 +127,16 @@ export function useSonk(): SonkData & { loading: boolean } {
     }
     setLikes(counts);
     setLiked(mine);
+
+    if (user) {
+      const { data: blocks } = await supabase
+        .from("sonk_blocks")
+        .select("blocked_id")
+        .eq("blocker_id", user.id);
+      setBlocked(new Set((blocks ?? []).map((b) => b.blocked_id)));
+    } else {
+      setBlocked(new Set());
+    }
     setLoading(false);
   };
 
@@ -87,7 +161,60 @@ export function useSonk(): SonkData & { loading: boolean } {
     }
   };
 
-  const canDelete = (post: SonkPost) => !!user && (post.author_id === user.id || rank >= 2);
+  const canModerate = sonkRank >= 1;
+  const canDelete = (post: SonkPost) => !!user && (post.author_id === user.id || canModerate);
+
+  const dislikeOnly = (authorId: string) => warningEffects(warnings[authorId] ?? 0).dislikeOnly;
+
+  const likeIcon = (authorId: string, isLiked: boolean) =>
+    dislikeOnly(authorId) ? (
+      <ThumbsDown className={cn("h-5 w-5", isLiked && "fill-current")} aria-hidden="true" />
+    ) : (
+      <Heart className={cn("h-5 w-5", isLiked && "fill-current")} aria-hidden="true" />
+    );
+
+  const report = async (target: SonkTarget, id: string) => {
+    if (!user) return toast.error("Sign in to report content");
+    const reason = window.prompt("What is wrong with this content?")?.trim();
+    if (!reason) return;
+    const { error } = await supabase.from("sonk_reports").insert({
+      target_type: target,
+      target_id: id,
+      reporter_id: user.id,
+      reason,
+    });
+    if (error) toast.error(error.message);
+    else toast.success("Report sent to the Sonk moderators");
+  };
+
+  const hide = async (target: SonkTarget, id: string, hidden: boolean) => {
+    const table = target === "post" ? "sonk_posts" : "sonk_comments";
+    const { error } = await supabase.from(table).update({ hidden }).eq("id", id);
+    if (error) return toast.error(error.message);
+    toast.success(hidden ? "Content hidden" : "Content restored");
+    if (target === "post")
+      setPosts((p) => p.map((x) => (x.id === id ? { ...x, hidden } : x)));
+  };
+
+  const block = async (authorId: string) => {
+    if (!user) return toast.error("Sign in to block accounts");
+    if (blocked.has(authorId)) {
+      await supabase
+        .from("sonk_blocks")
+        .delete()
+        .eq("blocker_id", user.id)
+        .eq("blocked_id", authorId);
+      setBlocked((s) => new Set([...s].filter((x) => x !== authorId)));
+      toast.success("Account unblocked");
+      return;
+    }
+    const { error } = await supabase
+      .from("sonk_blocks")
+      .insert({ blocker_id: user.id, blocked_id: authorId });
+    if (error) return toast.error(error.message);
+    setBlocked((s) => new Set(s).add(authorId));
+    toast.success("Account blocked");
+  };
 
   const remove = async (id: string) => {
     const { error } = await supabase.from("sonk_posts").delete().eq("id", id);
@@ -98,7 +225,39 @@ export function useSonk(): SonkData & { loading: boolean } {
     }
   };
 
-  return { posts, authors, likes, liked, reload, toggleLike, remove, canDelete, loading };
+  const searching = search.trim().length > 0;
+  const visible = useMemo(
+    () =>
+      posts.filter((p) => {
+        if (blocked.has(p.author_id)) return false;
+        if (p.hidden && !(user && (p.author_id === user.id || canModerate))) return false;
+        if (!searching && warningEffects(warnings[p.author_id] ?? 0).deranked) return false;
+        if (!searching && p.blacklisted) return false;
+        return true;
+      }),
+    [posts, blocked, warnings, searching, user, canModerate],
+  );
+
+  return {
+    posts: visible,
+    authors,
+    likes,
+    liked,
+    marks,
+    warnings,
+    blocked,
+    reload,
+    toggleLike,
+    remove,
+    canDelete,
+    canModerate,
+    dislikeOnly,
+    likeIcon,
+    report,
+    hide,
+    block,
+    loading,
+  };
 }
 
 function Avatar({ author }: { author?: SonkAuthor }) {
