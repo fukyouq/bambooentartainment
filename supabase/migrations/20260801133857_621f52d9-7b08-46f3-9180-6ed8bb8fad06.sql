@@ -1,0 +1,1 @@
+REVOKE EXECUTE ON FUNCTION public.sync_sonk_status() FROM PUBLIC, anon, authenticated;

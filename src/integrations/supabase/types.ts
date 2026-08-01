@@ -70,6 +70,7 @@ export type Database = {
           status: Database["public"]["Enums"]["article_status"]
           title: string
           updated_at: string
+          video_url: string | null
         }
         Insert: {
           author_id?: string | null
@@ -88,6 +89,7 @@ export type Database = {
           status?: Database["public"]["Enums"]["article_status"]
           title: string
           updated_at?: string
+          video_url?: string | null
         }
         Update: {
           author_id?: string | null
@@ -106,6 +108,7 @@ export type Database = {
           status?: Database["public"]["Enums"]["article_status"]
           title?: string
           updated_at?: string
+          video_url?: string | null
         }
         Relationships: []
       }
@@ -254,11 +257,120 @@ export type Database = {
         }
         Relationships: []
       }
+      sonk_accounts: {
+        Row: {
+          created_at: string
+          handle: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          handle: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          handle?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      sonk_ad_campaigns: {
+        Row: {
+          body: string | null
+          budget_cents: number
+          click_url: string | null
+          created_at: string
+          id: string
+          media_url: string | null
+          owner_id: string
+          payment_reference: string | null
+          status: Database["public"]["Enums"]["ad_status"]
+          target_country: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          body?: string | null
+          budget_cents?: number
+          click_url?: string | null
+          created_at?: string
+          id?: string
+          media_url?: string | null
+          owner_id: string
+          payment_reference?: string | null
+          status?: Database["public"]["Enums"]["ad_status"]
+          target_country?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          body?: string | null
+          budget_cents?: number
+          click_url?: string | null
+          created_at?: string
+          id?: string
+          media_url?: string | null
+          owner_id?: string
+          payment_reference?: string | null
+          status?: Database["public"]["Enums"]["ad_status"]
+          target_country?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      sonk_badges: {
+        Row: {
+          badge: Database["public"]["Enums"]["badge_kind"]
+          created_at: string
+          granted_by: string | null
+          id: string
+          user_id: string
+        }
+        Insert: {
+          badge: Database["public"]["Enums"]["badge_kind"]
+          created_at?: string
+          granted_by?: string | null
+          id?: string
+          user_id: string
+        }
+        Update: {
+          badge?: Database["public"]["Enums"]["badge_kind"]
+          created_at?: string
+          granted_by?: string | null
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      sonk_blocks: {
+        Row: {
+          blocked_id: string
+          blocker_id: string
+          created_at: string
+        }
+        Insert: {
+          blocked_id: string
+          blocker_id: string
+          created_at?: string
+        }
+        Update: {
+          blocked_id?: string
+          blocker_id?: string
+          created_at?: string
+        }
+        Relationships: []
+      }
       sonk_comments: {
         Row: {
           author_id: string
           body: string
           created_at: string
+          hidden: boolean
           id: string
           post_id: string
         }
@@ -266,6 +378,7 @@ export type Database = {
           author_id: string
           body: string
           created_at?: string
+          hidden?: boolean
           id?: string
           post_id: string
         }
@@ -273,6 +386,7 @@ export type Database = {
           author_id?: string
           body?: string
           created_at?: string
+          hidden?: boolean
           id?: string
           post_id?: string
         }
@@ -312,11 +426,52 @@ export type Database = {
           },
         ]
       }
+      sonk_music_requests: {
+        Row: {
+          catalogue_url: string | null
+          created_at: string
+          decision_note: string | null
+          id: string
+          reviewed_by: string | null
+          song_count: number
+          status: Database["public"]["Enums"]["verify_status"]
+          total_views: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          catalogue_url?: string | null
+          created_at?: string
+          decision_note?: string | null
+          id?: string
+          reviewed_by?: string | null
+          song_count?: number
+          status?: Database["public"]["Enums"]["verify_status"]
+          total_views?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          catalogue_url?: string | null
+          created_at?: string
+          decision_note?: string | null
+          id?: string
+          reviewed_by?: string | null
+          song_count?: number
+          status?: Database["public"]["Enums"]["verify_status"]
+          total_views?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       sonk_posts: {
         Row: {
           author_id: string
+          blacklisted: boolean
           body: string | null
           created_at: string
+          hidden: boolean
           id: string
           kind: Database["public"]["Enums"]["sonk_kind"]
           media_url: string | null
@@ -325,8 +480,10 @@ export type Database = {
         }
         Insert: {
           author_id: string
+          blacklisted?: boolean
           body?: string | null
           created_at?: string
+          hidden?: boolean
           id?: string
           kind?: Database["public"]["Enums"]["sonk_kind"]
           media_url?: string | null
@@ -335,13 +492,174 @@ export type Database = {
         }
         Update: {
           author_id?: string
+          blacklisted?: boolean
           body?: string | null
           created_at?: string
+          hidden?: boolean
           id?: string
           kind?: Database["public"]["Enums"]["sonk_kind"]
           media_url?: string | null
           thumbnail_url?: string | null
           title?: string | null
+        }
+        Relationships: []
+      }
+      sonk_reports: {
+        Row: {
+          created_at: string
+          handled_by: string | null
+          id: string
+          reason: string
+          reporter_id: string
+          status: Database["public"]["Enums"]["report_status"]
+          target_id: string
+          target_type: Database["public"]["Enums"]["sonk_target"]
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          handled_by?: string | null
+          id?: string
+          reason?: string
+          reporter_id: string
+          status?: Database["public"]["Enums"]["report_status"]
+          target_id: string
+          target_type: Database["public"]["Enums"]["sonk_target"]
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          handled_by?: string | null
+          id?: string
+          reason?: string
+          reporter_id?: string
+          status?: Database["public"]["Enums"]["report_status"]
+          target_id?: string
+          target_type?: Database["public"]["Enums"]["sonk_target"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      sonk_status: {
+        Row: {
+          banned: boolean
+          updated_at: string
+          user_id: string
+          warning_count: number
+        }
+        Insert: {
+          banned?: boolean
+          updated_at?: string
+          user_id: string
+          warning_count?: number
+        }
+        Update: {
+          banned?: boolean
+          updated_at?: string
+          user_id?: string
+          warning_count?: number
+        }
+        Relationships: []
+      }
+      sonk_verification: {
+        Row: {
+          category: Database["public"]["Enums"]["verify_category"]
+          created_at: string
+          user_id: string
+          verified_by: string | null
+        }
+        Insert: {
+          category: Database["public"]["Enums"]["verify_category"]
+          created_at?: string
+          user_id: string
+          verified_by?: string | null
+        }
+        Update: {
+          category?: Database["public"]["Enums"]["verify_category"]
+          created_at?: string
+          user_id?: string
+          verified_by?: string | null
+        }
+        Relationships: []
+      }
+      sonk_verification_requests: {
+        Row: {
+          category: Database["public"]["Enums"]["verify_category"]
+          city: string | null
+          company_documents_url: string | null
+          country: string | null
+          created_at: string
+          date_of_birth: string | null
+          decision_note: string | null
+          full_name: string | null
+          id: string
+          id_document_url: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: Database["public"]["Enums"]["verify_status"]
+          updated_at: string
+          user_id: string
+          written_request: string | null
+        }
+        Insert: {
+          category: Database["public"]["Enums"]["verify_category"]
+          city?: string | null
+          company_documents_url?: string | null
+          country?: string | null
+          created_at?: string
+          date_of_birth?: string | null
+          decision_note?: string | null
+          full_name?: string | null
+          id?: string
+          id_document_url?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: Database["public"]["Enums"]["verify_status"]
+          updated_at?: string
+          user_id: string
+          written_request?: string | null
+        }
+        Update: {
+          category?: Database["public"]["Enums"]["verify_category"]
+          city?: string | null
+          company_documents_url?: string | null
+          country?: string | null
+          created_at?: string
+          date_of_birth?: string | null
+          decision_note?: string | null
+          full_name?: string | null
+          id?: string
+          id_document_url?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: Database["public"]["Enums"]["verify_status"]
+          updated_at?: string
+          user_id?: string
+          written_request?: string | null
+        }
+        Relationships: []
+      }
+      sonk_warnings: {
+        Row: {
+          created_at: string
+          id: string
+          issued_by: string | null
+          reason: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          issued_by?: string | null
+          reason?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          issued_by?: string | null
+          reason?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -371,6 +689,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      can_post_sonk: { Args: { _user_id: string }; Returns: boolean }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -382,15 +701,25 @@ export type Database = {
         Args: { _role: Database["public"]["Enums"]["app_role"] }
         Returns: number
       }
+      sonk_rank: { Args: { _user_id: string }; Returns: number }
+      sonk_role_rank: {
+        Args: { _role: Database["public"]["Enums"]["app_role"] }
+        Returns: number
+      }
+      sonk_warning_count: { Args: { _user_id: string }; Returns: number }
       user_rank: { Args: { _user_id: string }; Returns: number }
     }
     Enums: {
+      ad_status: "draft" | "pending_payment" | "active" | "paused" | "ended"
       app_role:
         | "overseer_company"
         | "overseer_entertainment"
         | "supervisor"
         | "journalist"
         | "user"
+        | "sonk_admin"
+        | "sonk_supervisor"
+        | "sonk_moderator"
       article_category:
         | "breaking_news"
         | "trending"
@@ -401,12 +730,17 @@ export type Database = {
         | "conflicts"
         | "other"
       article_status: "draft" | "published"
+      badge_kind: "staff" | "official" | "media" | "music"
+      report_status: "open" | "actioned" | "dismissed"
       sonk_kind: "video" | "short" | "post"
+      sonk_target: "post" | "comment"
       sports_subcategory:
         | "football"
         | "basketball"
         | "formula_1"
         | "individual_athletes"
+      verify_category: "individual" | "business" | "institution"
+      verify_status: "pending" | "approved" | "denied"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -534,12 +868,16 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      ad_status: ["draft", "pending_payment", "active", "paused", "ended"],
       app_role: [
         "overseer_company",
         "overseer_entertainment",
         "supervisor",
         "journalist",
         "user",
+        "sonk_admin",
+        "sonk_supervisor",
+        "sonk_moderator",
       ],
       article_category: [
         "breaking_news",
@@ -552,13 +890,18 @@ export const Constants = {
         "other",
       ],
       article_status: ["draft", "published"],
+      badge_kind: ["staff", "official", "media", "music"],
+      report_status: ["open", "actioned", "dismissed"],
       sonk_kind: ["video", "short", "post"],
+      sonk_target: ["post", "comment"],
       sports_subcategory: [
         "football",
         "basketball",
         "formula_1",
         "individual_athletes",
       ],
+      verify_category: ["individual", "business", "institution"],
+      verify_status: ["pending", "approved", "denied"],
     },
   },
 } as const

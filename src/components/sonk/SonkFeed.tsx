@@ -1,11 +1,40 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
-import { Heart, MessageCircle, Play, Send, Share2, Trash2, Volume2, VolumeX } from "lucide-react";
+import {
+  EyeOff,
+  Flag,
+  Heart,
+  MessageCircle,
+  Play,
+  Send,
+  Share2,
+  ThumbsDown,
+  Trash2,
+  UserX,
+  Volume2,
+  VolumeX,
+} from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
-import { extractHashtags, timeAgo, type SonkAuthor, type SonkKind, type SonkPost } from "@/lib/sonk";
+import {
+  extractHashtags,
+  timeAgo,
+  warningEffects,
+  type BadgeKind,
+  type SonkAuthor,
+  type SonkKind,
+  type SonkPost,
+  type SonkTarget,
+  type VerifyCategory,
+} from "@/lib/sonk";
+import { AccountMarks, EMPTY_MARKS, type MarkSet } from "./Badges";
+import { MediaPicker } from "./MediaPicker";
+import { ShortsPlayer } from "./ShortsPlayer";
 import { toast } from "sonner";
+
+const focusRing =
+  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background";
 
 interface Comment {
   id: string;
@@ -13,6 +42,7 @@ interface Comment {
   author_id: string;
   body: string;
   created_at: string;
+  hidden?: boolean;
 }
 
 export interface SonkData {
@@ -20,24 +50,44 @@ export interface SonkData {
   authors: Record<string, SonkAuthor>;
   likes: Record<string, number>;
   liked: Set<string>;
+  marks: MarkSet;
+  /** Warning count per account, used to apply the warning ladder. */
+  warnings: Record<string, number>;
+  blocked: Set<string>;
   reload: () => void;
   toggleLike: (id: string) => void;
   remove: (id: string) => void;
   canDelete: (post: SonkPost) => boolean;
+  canModerate: boolean;
+  dislikeOnly: (authorId: string) => boolean;
+  likeIcon: (authorId: string, isLiked: boolean) => ReactNode;
+  report: (target: SonkTarget, id: string) => void;
+  hide: (target: SonkTarget, id: string, hidden: boolean) => void;
+  block: (authorId: string) => void;
 }
 
-export function useSonk(): SonkData & { loading: boolean } {
-  const { user, rank } = useAuth();
+/**
+ * Loads the Sonk timeline plus everything the moderation and badge systems need.
+ * When `search` is empty, accounts on their 2nd warning are dropped from the
+ * algorithm; a direct search still surfaces them.
+ */
+export function useSonk(search = ""): SonkData & { loading: boolean } {
+  const { user, sonkRank } = useAuth();
   const [posts, setPosts] = useState<SonkPost[]>([]);
   const [authors, setAuthors] = useState<Record<string, SonkAuthor>>({});
   const [likes, setLikes] = useState<Record<string, number>>({});
   const [liked, setLiked] = useState<Set<string>>(new Set());
+  const [marks, setMarks] = useState<MarkSet>(EMPTY_MARKS);
+  const [warnings, setWarnings] = useState<Record<string, number>>({});
+  const [blocked, setBlocked] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
 
   const reload = async () => {
     const { data: rows } = await supabase
       .from("sonk_posts")
-      .select("id, author_id, kind, title, body, media_url, thumbnail_url, created_at")
+      .select(
+        "id, author_id, kind, title, body, media_url, thumbnail_url, created_at, hidden, blacklisted",
+      )
       .order("created_at", { ascending: false })
       .limit(200);
     const list = (rows ?? []) as SonkPost[];
@@ -45,13 +95,27 @@ export function useSonk(): SonkData & { loading: boolean } {
 
     const ids = Array.from(new Set(list.map((p) => p.author_id)));
     if (ids.length) {
-      const { data: profs } = await supabase
-        .from("public_profiles")
-        .select("id, username, avatar_url")
-        .in("id", ids);
+      const [{ data: profs }, { data: verifs }, { data: badgeRows }, { data: statuses }] =
+        await Promise.all([
+          supabase.from("public_profiles").select("id, username, avatar_url").in("id", ids),
+          supabase.from("sonk_verification").select("user_id, category").in("user_id", ids),
+          supabase.from("sonk_badges").select("user_id, badge").in("user_id", ids),
+          supabase.from("sonk_status").select("user_id, warning_count").in("user_id", ids),
+        ]);
       const map: Record<string, SonkAuthor> = {};
       for (const p of (profs ?? []) as SonkAuthor[]) map[p.id] = p;
       setAuthors(map);
+
+      const verification: Record<string, VerifyCategory> = {};
+      for (const v of verifs ?? []) verification[v.user_id] = v.category as VerifyCategory;
+      const badges: Record<string, BadgeKind[]> = {};
+      for (const b of badgeRows ?? [])
+        badges[b.user_id] = [...(badges[b.user_id] ?? []), b.badge as BadgeKind];
+      setMarks({ verification, badges });
+
+      const warn: Record<string, number> = {};
+      for (const s of statuses ?? []) warn[s.user_id] = s.warning_count;
+      setWarnings(warn);
     }
 
     const { data: likeRows } = await supabase.from("sonk_likes").select("post_id, user_id");
@@ -63,6 +127,16 @@ export function useSonk(): SonkData & { loading: boolean } {
     }
     setLikes(counts);
     setLiked(mine);
+
+    if (user) {
+      const { data: blocks } = await supabase
+        .from("sonk_blocks")
+        .select("blocked_id")
+        .eq("blocker_id", user.id);
+      setBlocked(new Set((blocks ?? []).map((b) => b.blocked_id)));
+    } else {
+      setBlocked(new Set());
+    }
     setLoading(false);
   };
 
@@ -87,7 +161,60 @@ export function useSonk(): SonkData & { loading: boolean } {
     }
   };
 
-  const canDelete = (post: SonkPost) => !!user && (post.author_id === user.id || rank >= 2);
+  const canModerate = sonkRank >= 1;
+  const canDelete = (post: SonkPost) => !!user && (post.author_id === user.id || canModerate);
+
+  const dislikeOnly = (authorId: string) => warningEffects(warnings[authorId] ?? 0).dislikeOnly;
+
+  const likeIcon = (authorId: string, isLiked: boolean) =>
+    dislikeOnly(authorId) ? (
+      <ThumbsDown className={cn("h-5 w-5", isLiked && "fill-current")} aria-hidden="true" />
+    ) : (
+      <Heart className={cn("h-5 w-5", isLiked && "fill-current")} aria-hidden="true" />
+    );
+
+  const report = async (target: SonkTarget, id: string) => {
+    if (!user) return toast.error("Sign in to report content");
+    const reason = window.prompt("What is wrong with this content?")?.trim();
+    if (!reason) return;
+    const { error } = await supabase.from("sonk_reports").insert({
+      target_type: target,
+      target_id: id,
+      reporter_id: user.id,
+      reason,
+    });
+    if (error) toast.error(error.message);
+    else toast.success("Report sent to the Sonk moderators");
+  };
+
+  const hide = async (target: SonkTarget, id: string, hidden: boolean) => {
+    const table = target === "post" ? "sonk_posts" : "sonk_comments";
+    const { error } = await supabase.from(table).update({ hidden }).eq("id", id);
+    if (error) return toast.error(error.message);
+    toast.success(hidden ? "Content hidden" : "Content restored");
+    if (target === "post")
+      setPosts((p) => p.map((x) => (x.id === id ? { ...x, hidden } : x)));
+  };
+
+  const block = async (authorId: string) => {
+    if (!user) return toast.error("Sign in to block accounts");
+    if (blocked.has(authorId)) {
+      await supabase
+        .from("sonk_blocks")
+        .delete()
+        .eq("blocker_id", user.id)
+        .eq("blocked_id", authorId);
+      setBlocked((s) => new Set([...s].filter((x) => x !== authorId)));
+      toast.success("Account unblocked");
+      return;
+    }
+    const { error } = await supabase
+      .from("sonk_blocks")
+      .insert({ blocker_id: user.id, blocked_id: authorId });
+    if (error) return toast.error(error.message);
+    setBlocked((s) => new Set(s).add(authorId));
+    toast.success("Account blocked");
+  };
 
   const remove = async (id: string) => {
     const { error } = await supabase.from("sonk_posts").delete().eq("id", id);
@@ -98,7 +225,39 @@ export function useSonk(): SonkData & { loading: boolean } {
     }
   };
 
-  return { posts, authors, likes, liked, reload, toggleLike, remove, canDelete, loading };
+  const searching = search.trim().length > 0;
+  const visible = useMemo(
+    () =>
+      posts.filter((p) => {
+        if (blocked.has(p.author_id)) return false;
+        if (p.hidden && !(user && (p.author_id === user.id || canModerate))) return false;
+        if (!searching && warningEffects(warnings[p.author_id] ?? 0).deranked) return false;
+        if (!searching && p.blacklisted) return false;
+        return true;
+      }),
+    [posts, blocked, warnings, searching, user, canModerate],
+  );
+
+  return {
+    posts: visible,
+    authors,
+    likes,
+    liked,
+    marks,
+    warnings,
+    blocked,
+    reload,
+    toggleLike,
+    remove,
+    canDelete,
+    canModerate,
+    dislikeOnly,
+    likeIcon,
+    report,
+    hide,
+    block,
+    loading,
+  };
 }
 
 function Avatar({ author }: { author?: SonkAuthor }) {
@@ -119,7 +278,7 @@ function Avatar({ author }: { author?: SonkAuthor }) {
   );
 }
 
-function CommentBox({ postId }: { postId: string }) {
+function CommentBox({ postId, data }: { postId: string; data: SonkData }) {
   const { user } = useAuth();
   const [items, setItems] = useState<Comment[]>([]);
   const [authors, setAuthors] = useState<Record<string, SonkAuthor>>({});
@@ -128,7 +287,7 @@ function CommentBox({ postId }: { postId: string }) {
   const load = async () => {
     const { data } = await supabase
       .from("sonk_comments")
-      .select("id, post_id, author_id, body, created_at")
+      .select("id, post_id, author_id, body, created_at, hidden")
       .eq("post_id", postId)
       .order("created_at", { ascending: true });
     const list = (data ?? []) as Comment[];
@@ -166,13 +325,40 @@ function CommentBox({ postId }: { postId: string }) {
 
   return (
     <div className="mt-3 border-t border-border pt-3">
+      <h4 className="sr-only">Replies</h4>
       <ul className="space-y-2">
         {items.map((c) => (
-          <li key={c.id} className="flex gap-2 text-sm">
-            <span className="font-bold">{authors[c.author_id]?.username ?? "member"}</span>
-            <span className="text-foreground/80">{c.body}</span>
-            <span className="ml-auto shrink-0 text-xs text-muted-foreground">
+          <li key={c.id} className="flex flex-wrap items-center gap-2 text-sm">
+            <span className="flex items-center gap-1 font-bold">
+              {authors[c.author_id]?.username ?? "member"}
+              <AccountMarks userId={c.author_id} marks={data.marks} />
+            </span>
+            <span className={cn("text-foreground/80", c.hidden && "italic opacity-60")}>
+              {c.hidden ? "Hidden by a moderator" : c.body}
+            </span>
+            <span className="ml-auto flex shrink-0 items-center gap-1 text-xs text-muted-foreground">
               {timeAgo(c.created_at)}
+              <button
+                type="button"
+                onClick={() => data.report("comment", c.id)}
+                aria-label="Report this reply"
+                className={cn("flex h-8 w-8 items-center justify-center", focusRing)}
+              >
+                <Flag className="h-3.5 w-3.5" aria-hidden="true" />
+              </button>
+              {data.canModerate && (
+                <button
+                  type="button"
+                  onClick={async () => {
+                    await data.hide("comment", c.id, !c.hidden);
+                    void load();
+                  }}
+                  aria-label={c.hidden ? "Unhide this reply" : "Hide this reply"}
+                  className={cn("flex h-8 w-8 items-center justify-center", focusRing)}
+                >
+                  <EyeOff className="h-3.5 w-3.5" aria-hidden="true" />
+                </button>
+              )}
             </span>
           </li>
         ))}
@@ -187,11 +373,17 @@ function CommentBox({ postId }: { postId: string }) {
           value={text}
           onChange={(e) => setText(e.target.value)}
           placeholder={user ? "Write a reply…" : "Sign in to reply"}
-          className="min-h-11 flex-1 rounded-sm border-2 border-border bg-background px-3 text-sm"
+          className={cn(
+            "min-h-11 flex-1 rounded-sm border-2 border-border bg-background px-3 text-sm",
+            focusRing,
+          )}
         />
         <button
           type="submit"
-          className="flex h-11 min-w-11 items-center justify-center rounded-sm bg-news-red px-3 text-news-red-foreground"
+          className={cn(
+            "flex h-11 min-w-11 items-center justify-center rounded-sm bg-news-red px-3 text-news-red-foreground",
+            focusRing,
+          )}
           aria-label="Send reply"
         >
           <Send className="h-4 w-4" aria-hidden="true" />
@@ -225,20 +417,25 @@ function PostActions({
     }
   };
   const isLiked = data.liked.has(post.id);
+  const dislikeOnly = data.dislikeOnly(post.author_id);
+  const isBlocked = data.blocked.has(post.author_id);
   return (
     <div className={cn("flex items-center gap-4", vertical && "flex-col gap-5")}>
       <button
         type="button"
         onClick={() => data.toggleLike(post.id)}
         aria-pressed={isLiked}
-        aria-label={isLiked ? "Unlike" : "Like"}
+        aria-label={
+          dislikeOnly ? (isLiked ? "Remove dislike" : "Dislike") : isLiked ? "Unlike" : "Like"
+        }
         className={cn(
           "flex min-h-11 items-center gap-1.5 text-sm font-bold",
+          focusRing,
           vertical && "flex-col",
           isLiked ? "text-news-red" : "text-foreground/70",
         )}
       >
-        <Heart className={cn("h-5 w-5", isLiked && "fill-current")} aria-hidden="true" />
+        {data.likeIcon(post.author_id, isLiked)}
         {data.likes[post.id] ?? 0}
       </button>
       <button
@@ -247,6 +444,7 @@ function PostActions({
         aria-label="Show replies"
         className={cn(
           "flex min-h-11 items-center gap-1.5 text-sm font-bold text-foreground/70",
+          focusRing,
           vertical && "flex-col",
         )}
       >
@@ -258,11 +456,52 @@ function PostActions({
         aria-label="Share"
         className={cn(
           "flex min-h-11 items-center gap-1.5 text-sm font-bold text-foreground/70",
+          focusRing,
           vertical && "flex-col",
         )}
       >
         <Share2 className="h-5 w-5" aria-hidden="true" />
       </button>
+      <button
+        type="button"
+        onClick={() => data.report("post", post.id)}
+        aria-label="Report this post"
+        className={cn(
+          "flex min-h-11 items-center text-foreground/70",
+          focusRing,
+          vertical && "flex-col",
+        )}
+      >
+        <Flag className="h-5 w-5" aria-hidden="true" />
+      </button>
+      <button
+        type="button"
+        onClick={() => data.block(post.author_id)}
+        aria-pressed={isBlocked}
+        aria-label={isBlocked ? "Unblock this account" : "Block this account"}
+        className={cn(
+          "flex min-h-11 items-center text-foreground/70",
+          focusRing,
+          vertical && "flex-col",
+        )}
+      >
+        <UserX className="h-5 w-5" aria-hidden="true" />
+      </button>
+      {data.canModerate && (
+        <button
+          type="button"
+          onClick={() => data.hide("post", post.id, !post.hidden)}
+          aria-pressed={!!post.hidden}
+          aria-label={post.hidden ? "Unhide this post" : "Hide this post"}
+          className={cn(
+            "flex min-h-11 items-center text-foreground/70",
+            focusRing,
+            vertical && "flex-col",
+          )}
+        >
+          <EyeOff className="h-5 w-5" aria-hidden="true" />
+        </button>
+      )}
       {data.canDelete(post) && (
         <button
           type="button"
@@ -270,6 +509,7 @@ function PostActions({
           aria-label="Delete post"
           className={cn(
             "flex min-h-11 items-center text-foreground/50 hover:text-news-red",
+            focusRing,
             vertical && "flex-col",
           )}
         >
@@ -292,10 +532,16 @@ export function TweetList({ data }: { data: SonkData }) {
           <Avatar author={data.authors[p.author_id]} />
           <div className="min-w-0 flex-1">
             <p className="flex flex-wrap items-baseline gap-2 text-sm">
-              <span className="font-typewriter font-bold">
+              <span className="flex items-center gap-1.5 font-typewriter font-bold">
                 {data.authors[p.author_id]?.username ?? "member"}
+                <AccountMarks userId={p.author_id} marks={data.marks} />
               </span>
               <span className="text-muted-foreground">· {timeAgo(p.created_at)}</span>
+              {p.hidden && (
+                <span className="bg-news-red px-1.5 py-0.5 text-xs font-bold text-news-red-foreground">
+                  Hidden
+                </span>
+              )}
             </p>
             {p.title && <p className="mt-0.5 font-bold">{p.title}</p>}
             <p className="mt-1 whitespace-pre-wrap break-words text-[15px] leading-relaxed">
@@ -316,7 +562,7 @@ export function TweetList({ data }: { data: SonkData }) {
                 onToggleComments={() => setOpen(open === p.id ? null : p.id)}
               />
             </div>
-            {open === p.id && <CommentBox postId={p.id} />}
+            {open === p.id && <CommentBox postId={p.id} data={data} />}
           </div>
         </li>
       ))}
@@ -328,13 +574,35 @@ export function ShortsReel({ data }: { data: SonkData }) {
   const shorts = data.posts.filter((p) => p.kind === "short");
   const [muted, setMuted] = useState(true);
   const [open, setOpen] = useState<string | null>(null);
+  const [fullscreen, setFullscreen] = useState<number | null>(null);
   if (!shorts.length)
     return <p className="py-10 text-center text-muted-foreground">No shorts yet.</p>;
   return (
     <div className="mx-auto max-w-md">
+      <button
+        type="button"
+        onClick={() => setFullscreen(0)}
+        className={cn(
+          "mb-3 min-h-11 w-full rounded-sm bg-news-red px-4 font-typewriter text-sm font-bold text-news-red-foreground",
+          focusRing,
+        )}
+      >
+        Open full-screen player
+      </button>
       <div className="h-[70vh] snap-y snap-mandatory overflow-y-auto rounded-sm border-2 border-border bg-foreground/95">
-        {shorts.map((p) => (
+        {shorts.map((p, i) => (
           <article key={p.id} id={p.id} className="relative h-[70vh] snap-start">
+            <button
+              type="button"
+              onClick={() => setFullscreen(i)}
+              aria-label={`Open ${p.title ?? "this short"} in the full-screen player`}
+              className={cn(
+                "absolute left-3 top-3 z-10 flex h-11 items-center rounded-sm bg-background/85 px-3 text-xs font-bold",
+                focusRing,
+              )}
+            >
+              Full screen
+            </button>
             {p.media_url ? (
               <video
                 src={p.media_url}
@@ -392,8 +660,20 @@ export function ShortsReel({ data }: { data: SonkData }) {
       </div>
       {open && (
         <div className="mt-4 border-2 border-border p-3">
-          <CommentBox postId={open} />
+          <CommentBox postId={open} data={data} />
         </div>
+      )}
+      {fullscreen !== null && (
+        <ShortsPlayer
+          posts={shorts}
+          startIndex={fullscreen}
+          data={data}
+          onClose={() => setFullscreen(null)}
+          onOpenReplies={(id) => {
+            setFullscreen(null);
+            setOpen(id);
+          }}
+        />
       )}
     </div>
   );
@@ -432,7 +712,7 @@ export function VideoGrid({ data }: { data: SonkData }) {
           <div className="mt-3">
             <PostActions post={current} data={data} onToggleComments={() => undefined} />
           </div>
-          <CommentBox postId={current.id} />
+          <CommentBox postId={current.id} data={data} />
         </div>
       )}
       <aside>
@@ -481,7 +761,7 @@ export function VideoGrid({ data }: { data: SonkData }) {
 }
 
 export function SonkComposer({ kind, onDone }: { kind: SonkKind; onDone: () => void }) {
-  const { user } = useAuth();
+  const { user, canPostSonk, warningCount, banned, sonkHandle } = useAuth();
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
   const [media, setMedia] = useState("");
@@ -495,6 +775,32 @@ export function SonkComposer({ kind, onDone }: { kind: SonkKind; onDone: () => v
           Sign in
         </Link>{" "}
         to post on Sonk.
+      </p>
+    );
+
+  if (!sonkHandle)
+    return (
+      <p className="border-2 border-dashed border-border p-4 text-sm">
+        You need a Sonk account before you can post. Create your handle on your{" "}
+        <Link to="/profile" className="font-bold underline">
+          profile page
+        </Link>
+        .
+      </p>
+    );
+
+  if (banned)
+    return (
+      <p className="border-2 border-news-red p-4 text-sm font-bold text-news-red">
+        Your Sonk account is banned after a fourth warning. You can no longer post.
+      </p>
+    );
+
+  if (!canPostSonk)
+    return (
+      <p className="border-2 border-news-red p-4 text-sm">
+        You are on warning {warningCount} of 3, so posting new videos is blocked. Contact a Sonk
+        moderator if you think this is a mistake.
       </p>
     );
 
@@ -548,16 +854,28 @@ export function SonkComposer({ kind, onDone }: { kind: SonkKind; onDone: () => v
         onChange={(e) => setBody(e.target.value)}
         placeholder="Use #hashtags to help people find this"
       />
-      <label className="block text-xs font-bold uppercase" htmlFor="sonk-media">
-        {kind === "post" ? "Image URL (optional)" : "Video URL"}
-      </label>
-      <input
-        id="sonk-media"
-        className={input}
-        value={media}
-        onChange={(e) => setMedia(e.target.value)}
-        placeholder="https://…"
-      />
+      {kind === "post" ? (
+        <>
+          <label className="block text-xs font-bold uppercase" htmlFor="sonk-media">
+            Image URL (optional)
+          </label>
+          <input
+            id="sonk-media"
+            className={input}
+            value={media}
+            onChange={(e) => setMedia(e.target.value)}
+            placeholder="https://…"
+          />
+        </>
+      ) : (
+        <MediaPicker
+          userId={user.id}
+          label={kind === "short" ? "Short video" : "Long-form video"}
+          value={media}
+          onChange={setMedia}
+          allowRecording={kind === "short"}
+        />
+      )}
       {kind !== "post" && (
         <>
           <label className="block text-xs font-bold uppercase" htmlFor="sonk-thumb">

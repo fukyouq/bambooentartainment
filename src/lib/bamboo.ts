@@ -1,30 +1,54 @@
 export type AppRole =
   | "overseer_company"
   | "overseer_entertainment"
+  | "sonk_admin"
   | "supervisor"
+  | "sonk_supervisor"
   | "journalist"
+  | "sonk_moderator"
   | "user";
 
 export const ROLE_LABELS: Record<AppRole, string> = {
   overseer_company: "Overseer of Bamboo Company",
   overseer_entertainment: "Overseer of Bamboo Entertainment",
+  sonk_admin: "Sonk Administrator",
   supervisor: "Supervisor",
+  sonk_supervisor: "Sonk Supervisor",
   journalist: "Journalist",
+  sonk_moderator: "Moderator",
   user: "Reader",
 };
 
 export const ROLE_RANK: Record<AppRole, number> = {
   overseer_company: 4,
   overseer_entertainment: 3,
+  sonk_admin: 2,
   supervisor: 2,
+  sonk_supervisor: 2,
+  journalist: 1,
+  sonk_moderator: 1,
+  user: 0,
+};
+
+/** Sonk-side ladder: Moderator < Sonk Supervisor < Sonk Administrator < Overseers. */
+export const SONK_ROLE_RANK: Record<AppRole, number> = {
+  overseer_company: 5,
+  overseer_entertainment: 4,
+  sonk_admin: 3,
+  sonk_supervisor: 2,
+  supervisor: 2,
+  sonk_moderator: 1,
   journalist: 1,
   user: 0,
 };
 
 export const ASSIGNABLE_ROLES: AppRole[] = [
   "overseer_entertainment",
+  "sonk_admin",
   "supervisor",
+  "sonk_supervisor",
   "journalist",
+  "sonk_moderator",
   "user",
 ];
 
