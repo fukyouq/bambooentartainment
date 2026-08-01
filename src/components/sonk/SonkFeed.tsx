@@ -8,7 +8,6 @@ import {
   Play,
   Send,
   Share2,
-  ShieldAlert,
   ThumbsDown,
   Trash2,
   UserX,
@@ -489,32 +488,19 @@ function PostActions({
         <UserX className="h-5 w-5" aria-hidden="true" />
       </button>
       {data.canModerate && (
-        <>
-          <button
-            type="button"
-            onClick={() => data.hide("post", post.id, !post.hidden)}
-            aria-pressed={!!post.hidden}
-            aria-label={post.hidden ? "Unhide this post" : "Hide this post"}
-            className={cn(
-              "flex min-h-11 items-center text-foreground/70",
-              focusRing,
-              vertical && "flex-col",
-            )}
-          >
-            <EyeOff className="h-5 w-5" aria-hidden="true" />
-          </button>
-          <Link
-            to="/sonk/moderation"
-            aria-label="Open the moderation desk for this account"
-            className={cn(
-              "flex min-h-11 items-center text-foreground/70",
-              focusRing,
-              vertical && "flex-col",
-            )}
-          >
-            <ShieldAlert className="h-5 w-5" aria-hidden="true" />
-          </Link>
-        </>
+        <button
+          type="button"
+          onClick={() => data.hide("post", post.id, !post.hidden)}
+          aria-pressed={!!post.hidden}
+          aria-label={post.hidden ? "Unhide this post" : "Hide this post"}
+          className={cn(
+            "flex min-h-11 items-center text-foreground/70",
+            focusRing,
+            vertical && "flex-col",
+          )}
+        >
+          <EyeOff className="h-5 w-5" aria-hidden="true" />
+        </button>
       )}
       {data.canDelete(post) && (
         <button
@@ -775,7 +761,7 @@ export function VideoGrid({ data }: { data: SonkData }) {
 }
 
 export function SonkComposer({ kind, onDone }: { kind: SonkKind; onDone: () => void }) {
-  const { user } = useAuth();
+  const { user, canPostSonk, warningCount, banned, sonkHandle } = useAuth();
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
   const [media, setMedia] = useState("");
