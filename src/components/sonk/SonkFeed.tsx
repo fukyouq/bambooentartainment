@@ -31,6 +31,7 @@ import {
 } from "@/lib/sonk";
 import { AccountMarks, EMPTY_MARKS, type MarkSet } from "./Badges";
 import { MediaPicker } from "./MediaPicker";
+import { ShortsPlayer } from "./ShortsPlayer";
 import { toast } from "sonner";
 
 const focusRing =
@@ -725,7 +726,7 @@ export function VideoGrid({ data }: { data: SonkData }) {
           <div className="mt-3">
             <PostActions post={current} data={data} onToggleComments={() => undefined} />
           </div>
-          <CommentBox postId={current.id} />
+          <CommentBox postId={current.id} data={data} />
         </div>
       )}
       <aside>
