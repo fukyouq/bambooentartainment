@@ -417,20 +417,25 @@ function PostActions({
     }
   };
   const isLiked = data.liked.has(post.id);
+  const dislikeOnly = data.dislikeOnly(post.author_id);
+  const isBlocked = data.blocked.has(post.author_id);
   return (
     <div className={cn("flex items-center gap-4", vertical && "flex-col gap-5")}>
       <button
         type="button"
         onClick={() => data.toggleLike(post.id)}
         aria-pressed={isLiked}
-        aria-label={isLiked ? "Unlike" : "Like"}
+        aria-label={
+          dislikeOnly ? (isLiked ? "Remove dislike" : "Dislike") : isLiked ? "Unlike" : "Like"
+        }
         className={cn(
           "flex min-h-11 items-center gap-1.5 text-sm font-bold",
+          focusRing,
           vertical && "flex-col",
           isLiked ? "text-news-red" : "text-foreground/70",
         )}
       >
-        <Heart className={cn("h-5 w-5", isLiked && "fill-current")} aria-hidden="true" />
+        {data.likeIcon(post.author_id, isLiked)}
         {data.likes[post.id] ?? 0}
       </button>
       <button
@@ -439,6 +444,7 @@ function PostActions({
         aria-label="Show replies"
         className={cn(
           "flex min-h-11 items-center gap-1.5 text-sm font-bold text-foreground/70",
+          focusRing,
           vertical && "flex-col",
         )}
       >
@@ -450,11 +456,65 @@ function PostActions({
         aria-label="Share"
         className={cn(
           "flex min-h-11 items-center gap-1.5 text-sm font-bold text-foreground/70",
+          focusRing,
           vertical && "flex-col",
         )}
       >
         <Share2 className="h-5 w-5" aria-hidden="true" />
       </button>
+      <button
+        type="button"
+        onClick={() => data.report("post", post.id)}
+        aria-label="Report this post"
+        className={cn(
+          "flex min-h-11 items-center text-foreground/70",
+          focusRing,
+          vertical && "flex-col",
+        )}
+      >
+        <Flag className="h-5 w-5" aria-hidden="true" />
+      </button>
+      <button
+        type="button"
+        onClick={() => data.block(post.author_id)}
+        aria-pressed={isBlocked}
+        aria-label={isBlocked ? "Unblock this account" : "Block this account"}
+        className={cn(
+          "flex min-h-11 items-center text-foreground/70",
+          focusRing,
+          vertical && "flex-col",
+        )}
+      >
+        <UserX className="h-5 w-5" aria-hidden="true" />
+      </button>
+      {data.canModerate && (
+        <>
+          <button
+            type="button"
+            onClick={() => data.hide("post", post.id, !post.hidden)}
+            aria-pressed={!!post.hidden}
+            aria-label={post.hidden ? "Unhide this post" : "Hide this post"}
+            className={cn(
+              "flex min-h-11 items-center text-foreground/70",
+              focusRing,
+              vertical && "flex-col",
+            )}
+          >
+            <EyeOff className="h-5 w-5" aria-hidden="true" />
+          </button>
+          <Link
+            to="/sonk/moderation"
+            aria-label="Open the moderation desk for this account"
+            className={cn(
+              "flex min-h-11 items-center text-foreground/70",
+              focusRing,
+              vertical && "flex-col",
+            )}
+          >
+            <ShieldAlert className="h-5 w-5" aria-hidden="true" />
+          </Link>
+        </>
+      )}
       {data.canDelete(post) && (
         <button
           type="button"
@@ -462,6 +522,7 @@ function PostActions({
           aria-label="Delete post"
           className={cn(
             "flex min-h-11 items-center text-foreground/50 hover:text-news-red",
+            focusRing,
             vertical && "flex-col",
           )}
         >
@@ -484,10 +545,16 @@ export function TweetList({ data }: { data: SonkData }) {
           <Avatar author={data.authors[p.author_id]} />
           <div className="min-w-0 flex-1">
             <p className="flex flex-wrap items-baseline gap-2 text-sm">
-              <span className="font-typewriter font-bold">
+              <span className="flex items-center gap-1.5 font-typewriter font-bold">
                 {data.authors[p.author_id]?.username ?? "member"}
+                <AccountMarks userId={p.author_id} marks={data.marks} />
               </span>
               <span className="text-muted-foreground">· {timeAgo(p.created_at)}</span>
+              {p.hidden && (
+                <span className="bg-news-red px-1.5 py-0.5 text-xs font-bold text-news-red-foreground">
+                  Hidden
+                </span>
+              )}
             </p>
             {p.title && <p className="mt-0.5 font-bold">{p.title}</p>}
             <p className="mt-1 whitespace-pre-wrap break-words text-[15px] leading-relaxed">
@@ -508,7 +575,7 @@ export function TweetList({ data }: { data: SonkData }) {
                 onToggleComments={() => setOpen(open === p.id ? null : p.id)}
               />
             </div>
-            {open === p.id && <CommentBox postId={p.id} />}
+            {open === p.id && <CommentBox postId={p.id} data={data} />}
           </div>
         </li>
       ))}
