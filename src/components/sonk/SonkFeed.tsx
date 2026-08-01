@@ -587,13 +587,35 @@ export function ShortsReel({ data }: { data: SonkData }) {
   const shorts = data.posts.filter((p) => p.kind === "short");
   const [muted, setMuted] = useState(true);
   const [open, setOpen] = useState<string | null>(null);
+  const [fullscreen, setFullscreen] = useState<number | null>(null);
   if (!shorts.length)
     return <p className="py-10 text-center text-muted-foreground">No shorts yet.</p>;
   return (
     <div className="mx-auto max-w-md">
+      <button
+        type="button"
+        onClick={() => setFullscreen(0)}
+        className={cn(
+          "mb-3 min-h-11 w-full rounded-sm bg-news-red px-4 font-typewriter text-sm font-bold text-news-red-foreground",
+          focusRing,
+        )}
+      >
+        Open full-screen player
+      </button>
       <div className="h-[70vh] snap-y snap-mandatory overflow-y-auto rounded-sm border-2 border-border bg-foreground/95">
-        {shorts.map((p) => (
+        {shorts.map((p, i) => (
           <article key={p.id} id={p.id} className="relative h-[70vh] snap-start">
+            <button
+              type="button"
+              onClick={() => setFullscreen(i)}
+              aria-label={`Open ${p.title ?? "this short"} in the full-screen player`}
+              className={cn(
+                "absolute left-3 top-3 z-10 flex h-11 items-center rounded-sm bg-background/85 px-3 text-xs font-bold",
+                focusRing,
+              )}
+            >
+              Full screen
+            </button>
             {p.media_url ? (
               <video
                 src={p.media_url}
@@ -651,8 +673,20 @@ export function ShortsReel({ data }: { data: SonkData }) {
       </div>
       {open && (
         <div className="mt-4 border-2 border-border p-3">
-          <CommentBox postId={open} />
+          <CommentBox postId={open} data={data} />
         </div>
+      )}
+      {fullscreen !== null && (
+        <ShortsPlayer
+          posts={shorts}
+          startIndex={fullscreen}
+          data={data}
+          onClose={() => setFullscreen(null)}
+          onOpenReplies={(id) => {
+            setFullscreen(null);
+            setOpen(id);
+          }}
+        />
       )}
     </div>
   );
