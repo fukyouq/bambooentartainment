@@ -391,6 +391,9 @@ export type Database = {
         | "supervisor"
         | "journalist"
         | "user"
+        | "sonk_admin"
+        | "sonk_supervisor"
+        | "sonk_moderator"
       article_category:
         | "breaking_news"
         | "trending"
@@ -540,6 +543,9 @@ export const Constants = {
         "supervisor",
         "journalist",
         "user",
+        "sonk_admin",
+        "sonk_supervisor",
+        "sonk_moderator",
       ],
       article_category: [
         "breaking_news",
