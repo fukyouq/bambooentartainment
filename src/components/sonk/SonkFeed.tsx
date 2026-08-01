@@ -278,7 +278,7 @@ function Avatar({ author }: { author?: SonkAuthor }) {
   );
 }
 
-function CommentBox({ postId }: { postId: string }) {
+function CommentBox({ postId, data }: { postId: string; data: SonkData }) {
   const { user } = useAuth();
   const [items, setItems] = useState<Comment[]>([]);
   const [authors, setAuthors] = useState<Record<string, SonkAuthor>>({});
@@ -287,7 +287,7 @@ function CommentBox({ postId }: { postId: string }) {
   const load = async () => {
     const { data } = await supabase
       .from("sonk_comments")
-      .select("id, post_id, author_id, body, created_at")
+      .select("id, post_id, author_id, body, created_at, hidden")
       .eq("post_id", postId)
       .order("created_at", { ascending: true });
     const list = (data ?? []) as Comment[];
@@ -325,13 +325,40 @@ function CommentBox({ postId }: { postId: string }) {
 
   return (
     <div className="mt-3 border-t border-border pt-3">
+      <h4 className="sr-only">Replies</h4>
       <ul className="space-y-2">
         {items.map((c) => (
-          <li key={c.id} className="flex gap-2 text-sm">
-            <span className="font-bold">{authors[c.author_id]?.username ?? "member"}</span>
-            <span className="text-foreground/80">{c.body}</span>
-            <span className="ml-auto shrink-0 text-xs text-muted-foreground">
+          <li key={c.id} className="flex flex-wrap items-center gap-2 text-sm">
+            <span className="flex items-center gap-1 font-bold">
+              {authors[c.author_id]?.username ?? "member"}
+              <AccountMarks userId={c.author_id} marks={data.marks} />
+            </span>
+            <span className={cn("text-foreground/80", c.hidden && "italic opacity-60")}>
+              {c.hidden ? "Hidden by a moderator" : c.body}
+            </span>
+            <span className="ml-auto flex shrink-0 items-center gap-1 text-xs text-muted-foreground">
               {timeAgo(c.created_at)}
+              <button
+                type="button"
+                onClick={() => data.report("comment", c.id)}
+                aria-label="Report this reply"
+                className={cn("flex h-8 w-8 items-center justify-center", focusRing)}
+              >
+                <Flag className="h-3.5 w-3.5" aria-hidden="true" />
+              </button>
+              {data.canModerate && (
+                <button
+                  type="button"
+                  onClick={async () => {
+                    await data.hide("comment", c.id, !c.hidden);
+                    void load();
+                  }}
+                  aria-label={c.hidden ? "Unhide this reply" : "Hide this reply"}
+                  className={cn("flex h-8 w-8 items-center justify-center", focusRing)}
+                >
+                  <EyeOff className="h-3.5 w-3.5" aria-hidden="true" />
+                </button>
+              )}
             </span>
           </li>
         ))}
@@ -346,11 +373,17 @@ function CommentBox({ postId }: { postId: string }) {
           value={text}
           onChange={(e) => setText(e.target.value)}
           placeholder={user ? "Write a reply…" : "Sign in to reply"}
-          className="min-h-11 flex-1 rounded-sm border-2 border-border bg-background px-3 text-sm"
+          className={cn(
+            "min-h-11 flex-1 rounded-sm border-2 border-border bg-background px-3 text-sm",
+            focusRing,
+          )}
         />
         <button
           type="submit"
-          className="flex h-11 min-w-11 items-center justify-center rounded-sm bg-news-red px-3 text-news-red-foreground"
+          className={cn(
+            "flex h-11 min-w-11 items-center justify-center rounded-sm bg-news-red px-3 text-news-red-foreground",
+            focusRing,
+          )}
           aria-label="Send reply"
         >
           <Send className="h-4 w-4" aria-hidden="true" />
