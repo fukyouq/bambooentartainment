@@ -778,6 +778,32 @@ export function SonkComposer({ kind, onDone }: { kind: SonkKind; onDone: () => v
       </p>
     );
 
+  if (!sonkHandle)
+    return (
+      <p className="border-2 border-dashed border-border p-4 text-sm">
+        You need a Sonk account before you can post. Create your handle on your{" "}
+        <Link to="/profile" className="font-bold underline">
+          profile page
+        </Link>
+        .
+      </p>
+    );
+
+  if (banned)
+    return (
+      <p className="border-2 border-news-red p-4 text-sm font-bold text-news-red">
+        Your Sonk account is banned after a fourth warning. You can no longer post.
+      </p>
+    );
+
+  if (!canPostSonk)
+    return (
+      <p className="border-2 border-news-red p-4 text-sm">
+        You are on warning {warningCount} of 3, so posting new videos is blocked. Contact a Sonk
+        moderator if you think this is a mistake.
+      </p>
+    );
+
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!body.trim() && !media.trim()) return toast.error("Add some text or a media link");
@@ -828,16 +854,28 @@ export function SonkComposer({ kind, onDone }: { kind: SonkKind; onDone: () => v
         onChange={(e) => setBody(e.target.value)}
         placeholder="Use #hashtags to help people find this"
       />
-      <label className="block text-xs font-bold uppercase" htmlFor="sonk-media">
-        {kind === "post" ? "Image URL (optional)" : "Video URL"}
-      </label>
-      <input
-        id="sonk-media"
-        className={input}
-        value={media}
-        onChange={(e) => setMedia(e.target.value)}
-        placeholder="https://…"
-      />
+      {kind === "post" ? (
+        <>
+          <label className="block text-xs font-bold uppercase" htmlFor="sonk-media">
+            Image URL (optional)
+          </label>
+          <input
+            id="sonk-media"
+            className={input}
+            value={media}
+            onChange={(e) => setMedia(e.target.value)}
+            placeholder="https://…"
+          />
+        </>
+      ) : (
+        <MediaPicker
+          userId={user.id}
+          label={kind === "short" ? "Short video" : "Long-form video"}
+          value={media}
+          onChange={setMedia}
+          allowRecording={kind === "short"}
+        />
+      )}
       {kind !== "post" && (
         <>
           <label className="block text-xs font-bold uppercase" htmlFor="sonk-thumb">
