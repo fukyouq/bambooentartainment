@@ -1,8 +1,12 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
+import { Megaphone } from "lucide-react";
 import { GreenHeader } from "@/components/GreenHeader";
 import { ProfileGuide } from "@/components/ProfileGuide";
 import { NewsNav } from "@/components/NewsNav";
 import { SiteFooter } from "@/components/SiteFooter";
+import { supabase } from "@/integrations/supabase/client";
+import { timeAgo, type SonkPost } from "@/lib/sonk";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -38,12 +42,22 @@ function Index() {
               We are Bamboo Entartainment, we are a News Medium and a Social Media app and site, our
               Social Media site is like "Youtube", "Tiktok" and "Twitter/X" at the same time.
             </p>
-            <Link
-              to="/news"
-              className="mt-6 inline-flex bg-ember px-5 py-2.5 text-sm font-bold text-ember-foreground hover:opacity-90"
-            >
-              Read Bamboo News
-            </Link>
+            <div className="mt-6 flex flex-wrap items-center gap-3">
+              <Link
+                to="/news"
+                className="inline-flex min-h-11 items-center bg-ember px-5 py-2.5 text-sm font-bold text-ember-foreground hover:opacity-90"
+              >
+                Read Bamboo News
+              </Link>
+              <Link
+                to="/announcements"
+                className="inline-flex min-h-11 items-center gap-2 bg-news-red px-5 py-2.5 text-sm font-bold text-news-red-foreground hover:opacity-90"
+              >
+                <Megaphone className="h-4 w-4" aria-hidden="true" />
+                Sonk
+              </Link>
+            </div>
+            <SonkArticleSection />
           </div>
           <div className="border-t-4 border-news-red pt-2 lg:border-l lg:border-t-0 lg:border-l-border lg:pl-6 lg:pt-0">
             <h2 className="text-lg font-bold tracking-tight">Bamboo News</h2>
