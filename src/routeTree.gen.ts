@@ -9,7 +9,9 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as SonkDeskRouteImport } from './routes/sonk-desk'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
+import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as NewsRouteImport } from './routes/news'
 import { Route as AuthRouteImport } from './routes/auth'
@@ -19,9 +21,19 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthCallbackRouteImport } from './routes/auth.callback'
 import { Route as ArticleArticleIdRouteImport } from './routes/article.$articleId'
 
+const SonkDeskRoute = SonkDeskRouteImport.update({
+  id: '/sonk-desk',
+  path: '/sonk-desk',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   id: '/sitemap.xml',
   path: '/sitemap.xml',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SettingsRoute = SettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ProfileRoute = ProfileRouteImport.update({
@@ -72,7 +84,9 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRouteWithChildren
   '/news': typeof NewsRoute
   '/profile': typeof ProfileRoute
+  '/settings': typeof SettingsRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/sonk-desk': typeof SonkDeskRoute
   '/article/$articleId': typeof ArticleArticleIdRoute
   '/auth/callback': typeof AuthCallbackRoute
 }
@@ -83,7 +97,9 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRouteWithChildren
   '/news': typeof NewsRoute
   '/profile': typeof ProfileRoute
+  '/settings': typeof SettingsRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/sonk-desk': typeof SonkDeskRoute
   '/article/$articleId': typeof ArticleArticleIdRoute
   '/auth/callback': typeof AuthCallbackRoute
 }
@@ -95,7 +111,9 @@ export interface FileRoutesById {
   '/auth': typeof AuthRouteWithChildren
   '/news': typeof NewsRoute
   '/profile': typeof ProfileRoute
+  '/settings': typeof SettingsRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/sonk-desk': typeof SonkDeskRoute
   '/article/$articleId': typeof ArticleArticleIdRoute
   '/auth/callback': typeof AuthCallbackRoute
 }
@@ -108,7 +126,9 @@ export interface FileRouteTypes {
     | '/auth'
     | '/news'
     | '/profile'
+    | '/settings'
     | '/sitemap.xml'
+    | '/sonk-desk'
     | '/article/$articleId'
     | '/auth/callback'
   fileRoutesByTo: FileRoutesByTo
@@ -119,7 +139,9 @@ export interface FileRouteTypes {
     | '/auth'
     | '/news'
     | '/profile'
+    | '/settings'
     | '/sitemap.xml'
+    | '/sonk-desk'
     | '/article/$articleId'
     | '/auth/callback'
   id:
@@ -130,7 +152,9 @@ export interface FileRouteTypes {
     | '/auth'
     | '/news'
     | '/profile'
+    | '/settings'
     | '/sitemap.xml'
+    | '/sonk-desk'
     | '/article/$articleId'
     | '/auth/callback'
   fileRoutesById: FileRoutesById
@@ -142,17 +166,33 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRouteWithChildren
   NewsRoute: typeof NewsRoute
   ProfileRoute: typeof ProfileRoute
+  SettingsRoute: typeof SettingsRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
+  SonkDeskRoute: typeof SonkDeskRoute
   ArticleArticleIdRoute: typeof ArticleArticleIdRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/sonk-desk': {
+      id: '/sonk-desk'
+      path: '/sonk-desk'
+      fullPath: '/sonk-desk'
+      preLoaderRoute: typeof SonkDeskRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/sitemap.xml': {
       id: '/sitemap.xml'
       path: '/sitemap.xml'
       fullPath: '/sitemap.xml'
       preLoaderRoute: typeof SitemapDotxmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/settings': {
+      id: '/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof SettingsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/profile': {
@@ -231,7 +271,9 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRouteWithChildren,
   NewsRoute: NewsRoute,
   ProfileRoute: ProfileRoute,
+  SettingsRoute: SettingsRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
+  SonkDeskRoute: SonkDeskRoute,
   ArticleArticleIdRoute: ArticleArticleIdRoute,
 }
 export const routeTree = rootRouteImport

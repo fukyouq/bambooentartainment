@@ -781,9 +781,9 @@ export function SonkComposer({ kind, onDone }: { kind: SonkKind; onDone: () => v
   if (!sonkHandle)
     return (
       <p className="border-2 border-dashed border-border p-4 text-sm">
-        You need a Sonk account before you can post. Create your handle on your{" "}
-        <Link to="/profile" className="font-bold underline">
-          profile page
+        You need a Sonk account before you can post. Create your handle in{" "}
+        <Link to="/settings" className="font-bold underline">
+          Account settings
         </Link>
         .
       </p>

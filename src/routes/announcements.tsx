@@ -1,8 +1,10 @@
 import { useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
+import { Link } from "@tanstack/react-router";
 import { Clapperboard, Flame, Search, Sparkles } from "lucide-react";
 import { RedHeader } from "@/components/RedHeader";
 import { SiteFooter } from "@/components/SiteFooter";
+import { useAuth } from "@/hooks/useAuth";
 import {
   ShortsReel,
   SonkComposer,
@@ -43,6 +45,7 @@ const TABS: { id: SonkKind; label: string; icon: typeof Flame }[] = [
 
 function SonkPage() {
   const sonk = useSonk();
+  const { sonkRank } = useAuth();
   const [tab, setTab] = useState<SonkKind>("post");
   const [query, setQuery] = useState("");
 
@@ -72,7 +75,7 @@ function SonkPage() {
       <RedHeader title="Sonk" />
 
       <nav aria-label="Sonk sections" className="border-b-2 border-border bg-card">
-        <div className="mx-auto flex max-w-6xl gap-1 px-4">
+        <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-1 px-4">
           {TABS.map(({ id, label, icon: Icon }) => (
             <button
               key={id}
@@ -90,6 +93,22 @@ function SonkPage() {
               {label}
             </button>
           ))}
+          <span className="ml-auto flex items-center gap-4">
+            <Link
+              to="/settings"
+              className="font-typewriter text-xs font-bold underline underline-offset-4"
+            >
+              Account &amp; verification
+            </Link>
+            {sonkRank >= 1 && (
+              <Link
+                to="/sonk-desk"
+                className="font-typewriter text-xs font-bold text-news-red underline underline-offset-4"
+              >
+                Moderation desk
+              </Link>
+            )}
+          </span>
         </div>
       </nav>
 

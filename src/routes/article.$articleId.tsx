@@ -114,6 +114,20 @@ function ArticlePage() {
                 className="mt-5 w-full object-cover"
               />
             )}
+            {article.video_url && (
+              <figure className="mt-5">
+                <video
+                  src={article.video_url}
+                  controls
+                  playsInline
+                  aria-label={`Sonk video attached to “${article.title}”`}
+                  className="w-full border-2 border-news-red bg-foreground"
+                />
+                <figcaption className="mt-1 text-xs font-bold uppercase tracking-wide text-news-red">
+                  Sonk video
+                </figcaption>
+              </figure>
+            )}
             <p className="mt-5 whitespace-pre-line text-lg leading-relaxed text-foreground/85">
               {article.description}
             </p>

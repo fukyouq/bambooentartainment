@@ -94,6 +94,7 @@ export interface Article {
   sports_subcategory: SportsSubcategory | null;
   event_date: string;
   image_url: string | null;
+  video_url: string | null;
   keywords: string[];
   author_id: string | null;
   author_name: string;

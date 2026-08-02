@@ -12,6 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
+import { MediaPicker } from "@/components/sonk/MediaPicker";
 import {
   ASSIGNABLE_ROLES,
   AUDIT_ACTION_LABELS,
@@ -131,6 +132,7 @@ function ArticleForm({ authorName, userId }: { authorName: string; userId: strin
     description: "",
     eventDate: "",
     imageUrl: "",
+    videoUrl: "",
     category: "" as Category | "",
     sub: "" as SportsSubcategory | "",
   });
@@ -143,6 +145,10 @@ function ArticleForm({ authorName, userId }: { authorName: string; userId: strin
     if (form.category === "sports" && !form.sub) {
       return toast.error("Pick a sports sub-category.");
     }
+    const video = form.videoUrl.trim();
+    if (video && !/^https?:\/\//i.test(video)) {
+      return toast.error("The Sonk video link must start with http:// or https://");
+    }
     setBusy(true);
     const { data, error } = await supabase
       .from("articles")
@@ -151,6 +157,7 @@ function ArticleForm({ authorName, userId }: { authorName: string; userId: strin
       description: form.description.trim(),
       event_date: form.eventDate,
       image_url: form.imageUrl.trim() || null,
+      video_url: video || null,
       category: form.category,
       sports_subcategory:
         form.category === "sports" && form.sub ? (form.sub as SportsSubcategory) : null,
@@ -164,7 +171,15 @@ function ArticleForm({ authorName, userId }: { authorName: string; userId: strin
     setBusy(false);
     if (error) return toast.error(error.message);
     toast.success(status === "published" ? "Article published" : "Draft saved — preview it below");
-    setForm({ title: "", description: "", eventDate: "", imageUrl: "", category: "", sub: "" });
+    setForm({
+      title: "",
+      description: "",
+      eventDate: "",
+      imageUrl: "",
+      videoUrl: "",
+      category: "",
+      sub: "",
+    });
     void qc.invalidateQueries({ queryKey: ["articles"] });
     void qc.invalidateQueries({ queryKey: ["all-articles"] });
     void qc.invalidateQueries({ queryKey: ["audit-log"] });
@@ -253,6 +268,36 @@ function ArticleForm({ authorName, userId }: { authorName: string; userId: strin
                 ))}
               </select>
             </div>
+          )}
+        </div>
+        <div className="border-t-4 border-news-red pt-3">
+          <MediaPicker
+            userId={userId}
+            label="Attach a Sonk short or video (optional)"
+            value={form.videoUrl}
+            allowRecording
+            onChange={(url) => setForm((f) => ({ ...f, videoUrl: url }))}
+          />
+          {form.videoUrl.trim() !== "" && (
+            <figure className="mt-3">
+              <video
+                src={form.videoUrl}
+                controls
+                playsInline
+                aria-label="Preview of the attached Sonk video"
+                className="max-h-72 w-full border-2 border-news-red bg-foreground"
+              />
+              <figcaption className="mt-1 flex items-center gap-3 text-xs text-muted-foreground">
+                Preview — this clip appears on the article page.
+                <button
+                  type="button"
+                  onClick={() => setForm((f) => ({ ...f, videoUrl: "" }))}
+                  className="font-bold underline"
+                >
+                  Remove video
+                </button>
+              </figcaption>
+            </figure>
           )}
         </div>
         <div className="flex flex-wrap gap-2">

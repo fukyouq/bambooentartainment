@@ -1,5 +1,5 @@
 import { BadgeCheck, Check, Hammer, Megaphone, Music } from "lucide-react";
-import institutionIcon from "@/assets/institution-check.png";
+import institutionAsset from "@/assets/institution-check.png.asset.json";
 import { cn } from "@/lib/utils";
 import {
   BADGE_LABEL,
@@ -33,7 +33,7 @@ export function VerifiedMark({
     >
       <span className="sr-only">{VERIFY_LABEL[category]}</span>
       {category === "institution" ? (
-        <img src={institutionIcon} alt="" aria-hidden="true" className="h-3.5 w-3.5" />
+        <img src={institutionAsset.url} alt="" aria-hidden="true" className="h-3.5 w-3.5" />
       ) : (
         <Check className="h-3.5 w-3.5 text-background" aria-hidden="true" strokeWidth={3} />
       )}
