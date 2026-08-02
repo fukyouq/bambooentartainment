@@ -75,3 +75,56 @@ function Index() {
     </div>
   );
 }
+
+/** Latest Sonk posts, with navigation into the Sonk newsroom. */
+function SonkArticleSection() {
+  const { data: posts = [] } = useQuery({
+    queryKey: ["home-sonk-posts"],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("sonk_posts")
+        .select("id, author_id, kind, title, body, media_url, thumbnail_url, created_at")
+        .eq("hidden", false)
+        .eq("blacklisted", false)
+        .order("created_at", { ascending: false })
+        .limit(3);
+      return (data ?? []) as SonkPost[];
+    },
+  });
+
+  return (
+    <section className="mt-10 border-t-4 border-news-red pt-3" aria-labelledby="sonk-article">
+      <h2 id="sonk-article" className="font-typewriter text-2xl font-bold tracking-tight">
+        Sonk Article
+      </h2>
+      <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted-foreground">
+        Sonk is our social platform — long-form video, vertical shorts and a fast text feed in one
+        place. Here is what the Sonk newsroom is talking about right now.
+      </p>
+      <ul className="mt-4 divide-y divide-border border-b border-border">
+        {posts.length === 0 ? (
+          <li className="py-3 text-sm text-muted-foreground">
+            Nothing on Sonk yet — be the first to post.
+          </li>
+        ) : (
+          posts.map((p) => (
+            <li key={p.id} className="py-3">
+              <p className="text-sm font-bold leading-snug">
+                {p.title ?? p.body?.slice(0, 90) ?? "Untitled"}
+              </p>
+              <p className="mt-1 text-xs uppercase tracking-wide text-muted-foreground">
+                {p.kind} · {timeAgo(p.created_at)}
+              </p>
+            </li>
+          ))
+        )}
+      </ul>
+      <Link
+        to="/announcements"
+        className="mt-3 inline-block text-sm font-bold text-news-red hover:underline"
+      >
+        Go to the Sonk newsroom →
+      </Link>
+    </section>
+  );
+}
