@@ -270,6 +270,36 @@ function ArticleForm({ authorName, userId }: { authorName: string; userId: strin
             </div>
           )}
         </div>
+        <div className="border-t-4 border-news-red pt-3">
+          <MediaPicker
+            userId={userId}
+            label="Attach a Sonk short or video (optional)"
+            value={form.videoUrl}
+            allowRecording
+            onChange={(url) => setForm((f) => ({ ...f, videoUrl: url }))}
+          />
+          {form.videoUrl.trim() !== "" && (
+            <figure className="mt-3">
+              <video
+                src={form.videoUrl}
+                controls
+                playsInline
+                aria-label="Preview of the attached Sonk video"
+                className="max-h-72 w-full border-2 border-news-red bg-foreground"
+              />
+              <figcaption className="mt-1 flex items-center gap-3 text-xs text-muted-foreground">
+                Preview — this clip appears on the article page.
+                <button
+                  type="button"
+                  onClick={() => setForm((f) => ({ ...f, videoUrl: "" }))}
+                  className="font-bold underline"
+                >
+                  Remove video
+                </button>
+              </figcaption>
+            </figure>
+          )}
+        </div>
         <div className="flex flex-wrap gap-2">
           <Button type="submit" variant="outline" disabled={busy}>
             {busy ? "Saving…" : "Save as draft"}
