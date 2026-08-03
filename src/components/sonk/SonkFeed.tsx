@@ -522,9 +522,44 @@ function PostActions({
 
 export function TweetList({ data }: { data: SonkData }) {
   const posts = data.posts.filter((p) => p.kind === "post");
+  return <FeedList data={data} posts={posts} empty="No posts yet. Be the first." />;
+}
+
+/**
+ * Combined "For you" timeline: text posts (X style) and vertical shorts
+ * (TikTok style) interleaved newest-first in one scrollable column.
+ */
+export function CombinedFeed({
+  data,
+  onOpenShort,
+}: {
+  data: SonkData;
+  onOpenShort: (id: string) => void;
+}) {
+  const posts = data.posts.filter((p) => p.kind !== "video");
+  return (
+    <FeedList
+      data={data}
+      posts={posts}
+      onOpenShort={onOpenShort}
+      empty="Nothing here yet. Post something to start the timeline."
+    />
+  );
+}
+
+function FeedList({
+  data,
+  posts,
+  empty,
+  onOpenShort,
+}: {
+  data: SonkData;
+  posts: SonkPost[];
+  empty: string;
+  onOpenShort?: (id: string) => void;
+}) {
   const [open, setOpen] = useState<string | null>(null);
-  if (!posts.length)
-    return <p className="py-10 text-center text-muted-foreground">No posts yet. Be the first.</p>;
+  if (!posts.length) return <p className="py-10 text-center text-muted-foreground">{empty}</p>;
   return (
     <ul className="divide-y divide-border border-t-4 border-news-red">
       {posts.map((p) => (
@@ -537,6 +572,11 @@ export function TweetList({ data }: { data: SonkData }) {
                 <AccountMarks userId={p.author_id} marks={data.marks} />
               </span>
               <span className="text-muted-foreground">· {timeAgo(p.created_at)}</span>
+              {p.kind === "short" && (
+                <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-bold uppercase">
+                  Short
+                </span>
+              )}
               {p.hidden && (
                 <span className="bg-news-red px-1.5 py-0.5 text-xs font-bold text-news-red-foreground">
                   Hidden
@@ -547,14 +587,43 @@ export function TweetList({ data }: { data: SonkData }) {
             <p className="mt-1 whitespace-pre-wrap break-words text-[15px] leading-relaxed">
               {p.body}
             </p>
-            {p.media_url && (
+            {p.kind === "short" ? (
+              <button
+                type="button"
+                onClick={() => onOpenShort?.(p.id)}
+                aria-label={`Play ${p.title ?? "this short"} full screen`}
+                className={cn(
+                  "mt-3 block aspect-[9/16] w-full max-w-[280px] overflow-hidden rounded-xl border border-border bg-foreground",
+                  focusRing,
+                )}
+              >
+                {p.media_url ? (
+                  <video
+                    src={p.media_url}
+                    poster={p.thumbnail_url ?? undefined}
+                    className="h-full w-full object-cover"
+                    muted
+                    loop
+                    playsInline
+                    autoPlay
+                  />
+                ) : (
+                  <img
+                    src={p.thumbnail_url ?? ""}
+                    alt=""
+                    loading="lazy"
+                    className="h-full w-full object-cover"
+                  />
+                )}
+              </button>
+            ) : p.media_url ? (
               <img
                 src={p.media_url}
                 alt=""
                 loading="lazy"
-                className="mt-3 max-h-96 w-full rounded-sm border-2 border-border object-cover"
+                className="mt-3 max-h-96 w-full rounded-xl border border-border object-cover"
               />
-            )}
+            ) : null}
             <div className="mt-2">
               <PostActions
                 post={p}
