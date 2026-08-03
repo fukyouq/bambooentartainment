@@ -33,7 +33,13 @@ export function VerifiedMark({
     >
       <span className="sr-only">{VERIFY_LABEL[category]}</span>
       {category === "institution" ? (
-        <img src={institutionAsset.url} alt="" aria-hidden="true" className="h-3.5 w-3.5" />
+        <img
+          src={institutionAsset.url}
+          alt=""
+          aria-hidden="true"
+          /* The source art is black line work: force it to solid white on the purple disc. */
+          className="h-3.5 w-3.5 brightness-0 invert"
+        />
       ) : (
         <Check className="h-3.5 w-3.5 text-background" aria-hidden="true" strokeWidth={3} />
       )}
