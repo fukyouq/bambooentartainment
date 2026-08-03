@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as SonkStudioRouteImport } from './routes/sonk-studio'
 import { Route as SonkDeskRouteImport } from './routes/sonk-desk'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as SettingsRouteImport } from './routes/settings'
@@ -21,6 +22,11 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthCallbackRouteImport } from './routes/auth.callback'
 import { Route as ArticleArticleIdRouteImport } from './routes/article.$articleId'
 
+const SonkStudioRoute = SonkStudioRouteImport.update({
+  id: '/sonk-studio',
+  path: '/sonk-studio',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SonkDeskRoute = SonkDeskRouteImport.update({
   id: '/sonk-desk',
   path: '/sonk-desk',
@@ -87,6 +93,7 @@ export interface FileRoutesByFullPath {
   '/settings': typeof SettingsRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/sonk-desk': typeof SonkDeskRoute
+  '/sonk-studio': typeof SonkStudioRoute
   '/article/$articleId': typeof ArticleArticleIdRoute
   '/auth/callback': typeof AuthCallbackRoute
 }
@@ -100,6 +107,7 @@ export interface FileRoutesByTo {
   '/settings': typeof SettingsRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/sonk-desk': typeof SonkDeskRoute
+  '/sonk-studio': typeof SonkStudioRoute
   '/article/$articleId': typeof ArticleArticleIdRoute
   '/auth/callback': typeof AuthCallbackRoute
 }
@@ -114,6 +122,7 @@ export interface FileRoutesById {
   '/settings': typeof SettingsRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/sonk-desk': typeof SonkDeskRoute
+  '/sonk-studio': typeof SonkStudioRoute
   '/article/$articleId': typeof ArticleArticleIdRoute
   '/auth/callback': typeof AuthCallbackRoute
 }
@@ -129,6 +138,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/sitemap.xml'
     | '/sonk-desk'
+    | '/sonk-studio'
     | '/article/$articleId'
     | '/auth/callback'
   fileRoutesByTo: FileRoutesByTo
@@ -142,6 +152,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/sitemap.xml'
     | '/sonk-desk'
+    | '/sonk-studio'
     | '/article/$articleId'
     | '/auth/callback'
   id:
@@ -155,6 +166,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/sitemap.xml'
     | '/sonk-desk'
+    | '/sonk-studio'
     | '/article/$articleId'
     | '/auth/callback'
   fileRoutesById: FileRoutesById
@@ -169,11 +181,19 @@ export interface RootRouteChildren {
   SettingsRoute: typeof SettingsRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   SonkDeskRoute: typeof SonkDeskRoute
+  SonkStudioRoute: typeof SonkStudioRoute
   ArticleArticleIdRoute: typeof ArticleArticleIdRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/sonk-studio': {
+      id: '/sonk-studio'
+      path: '/sonk-studio'
+      fullPath: '/sonk-studio'
+      preLoaderRoute: typeof SonkStudioRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/sonk-desk': {
       id: '/sonk-desk'
       path: '/sonk-desk'
@@ -274,6 +294,7 @@ const rootRouteChildren: RootRouteChildren = {
   SettingsRoute: SettingsRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   SonkDeskRoute: SonkDeskRoute,
+  SonkStudioRoute: SonkStudioRoute,
   ArticleArticleIdRoute: ArticleArticleIdRoute,
 }
 export const routeTree = rootRouteImport
