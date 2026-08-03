@@ -522,9 +522,44 @@ function PostActions({
 
 export function TweetList({ data }: { data: SonkData }) {
   const posts = data.posts.filter((p) => p.kind === "post");
+  return <FeedList data={data} posts={posts} empty="No posts yet. Be the first." />;
+}
+
+/**
+ * Combined "For you" timeline: text posts (X style) and vertical shorts
+ * (TikTok style) interleaved newest-first in one scrollable column.
+ */
+export function CombinedFeed({
+  data,
+  onOpenShort,
+}: {
+  data: SonkData;
+  onOpenShort: (id: string) => void;
+}) {
+  const posts = data.posts.filter((p) => p.kind !== "video");
+  return (
+    <FeedList
+      data={data}
+      posts={posts}
+      onOpenShort={onOpenShort}
+      empty="Nothing here yet. Post something to start the timeline."
+    />
+  );
+}
+
+function FeedList({
+  data,
+  posts,
+  empty,
+  onOpenShort,
+}: {
+  data: SonkData;
+  posts: SonkPost[];
+  empty: string;
+  onOpenShort?: (id: string) => void;
+}) {
   const [open, setOpen] = useState<string | null>(null);
-  if (!posts.length)
-    return <p className="py-10 text-center text-muted-foreground">No posts yet. Be the first.</p>;
+  if (!posts.length) return <p className="py-10 text-center text-muted-foreground">{empty}</p>;
   return (
     <ul className="divide-y divide-border border-t-4 border-news-red">
       {posts.map((p) => (
@@ -537,6 +572,11 @@ export function TweetList({ data }: { data: SonkData }) {
                 <AccountMarks userId={p.author_id} marks={data.marks} />
               </span>
               <span className="text-muted-foreground">· {timeAgo(p.created_at)}</span>
+              {p.kind === "short" && (
+                <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-bold uppercase">
+                  Short
+                </span>
+              )}
               {p.hidden && (
                 <span className="bg-news-red px-1.5 py-0.5 text-xs font-bold text-news-red-foreground">
                   Hidden
@@ -547,14 +587,43 @@ export function TweetList({ data }: { data: SonkData }) {
             <p className="mt-1 whitespace-pre-wrap break-words text-[15px] leading-relaxed">
               {p.body}
             </p>
-            {p.media_url && (
+            {p.kind === "short" ? (
+              <button
+                type="button"
+                onClick={() => onOpenShort?.(p.id)}
+                aria-label={`Play ${p.title ?? "this short"} full screen`}
+                className={cn(
+                  "mt-3 block aspect-[9/16] w-full max-w-[280px] overflow-hidden rounded-xl border border-border bg-foreground",
+                  focusRing,
+                )}
+              >
+                {p.media_url ? (
+                  <video
+                    src={p.media_url}
+                    poster={p.thumbnail_url ?? undefined}
+                    className="h-full w-full object-cover"
+                    muted
+                    loop
+                    playsInline
+                    autoPlay
+                  />
+                ) : (
+                  <img
+                    src={p.thumbnail_url ?? ""}
+                    alt=""
+                    loading="lazy"
+                    className="h-full w-full object-cover"
+                  />
+                )}
+              </button>
+            ) : p.media_url ? (
               <img
                 src={p.media_url}
                 alt=""
                 loading="lazy"
-                className="mt-3 max-h-96 w-full rounded-sm border-2 border-border object-cover"
+                className="mt-3 max-h-96 w-full rounded-xl border border-border object-cover"
               />
-            )}
+            ) : null}
             <div className="mt-2">
               <PostActions
                 post={p}
@@ -679,42 +748,74 @@ export function ShortsReel({ data }: { data: SonkData }) {
   );
 }
 
+/** YouTube-style videos surface: a thumbnail grid, then a watch view. */
 export function VideoGrid({ data }: { data: SonkData }) {
   const videos = data.posts.filter((p) => p.kind === "video");
-  const [active, setActive] = useState<SonkPost | null>(null);
-  const current = active ?? videos[0] ?? null;
-  const rest = useMemo(() => videos.filter((v) => v.id !== current?.id), [videos, current]);
+  const [watchId, setWatchId] = useState<string | null>(null);
+  const watching = videos.find((v) => v.id === watchId) ?? null;
+  const rest = useMemo(
+    () => videos.filter((v) => v.id !== watching?.id),
+    [videos, watching],
+  );
+
   if (!videos.length)
     return <p className="py-10 text-center text-muted-foreground">No videos yet.</p>;
+
+  if (!watching)
+    return (
+      <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
+        {videos.map((v) => (
+          <VideoCard key={v.id} video={v} data={data} onOpen={() => setWatchId(v.id)} />
+        ))}
+      </div>
+    );
+
   return (
     <div className="grid gap-8 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
-      {current && (
-        <div id={current.id}>
-          <div className="aspect-video w-full border-2 border-border bg-foreground">
-            {current.media_url ? (
-              <video
-                src={current.media_url}
-                poster={current.thumbnail_url ?? undefined}
-                controls
-                className="h-full w-full"
-              />
-            ) : (
-              <img src={current.thumbnail_url ?? ""} alt="" className="h-full w-full object-cover" />
-            )}
-          </div>
-          <h3 className="mt-3 text-xl font-bold tracking-tight">{current.title ?? "Untitled"}</h3>
-          <p className="mt-1 text-sm text-muted-foreground">
-            @{data.authors[current.author_id]?.username ?? "member"} · {timeAgo(current.created_at)}
-          </p>
-          {current.body && (
-            <p className="mt-3 whitespace-pre-wrap text-[15px] leading-relaxed">{current.body}</p>
+      <div id={watching.id}>
+        <button
+          type="button"
+          onClick={() => setWatchId(null)}
+          className={cn("mb-3 min-h-11 text-sm font-bold underline", focusRing)}
+        >
+          ← Back to all videos
+        </button>
+        <div className="aspect-video w-full overflow-hidden rounded-xl bg-foreground">
+          {watching.media_url ? (
+            <video
+              src={watching.media_url}
+              poster={watching.thumbnail_url ?? undefined}
+              controls
+              autoPlay
+              className="h-full w-full"
+            />
+          ) : (
+            <img
+              src={watching.thumbnail_url ?? ""}
+              alt=""
+              className="h-full w-full object-cover"
+            />
           )}
-          <div className="mt-3">
-            <PostActions post={current} data={data} onToggleComments={() => undefined} />
-          </div>
-          <CommentBox postId={current.id} data={data} />
         </div>
-      )}
+        <h3 className="mt-3 text-xl font-bold tracking-tight">{watching.title ?? "Untitled"}</h3>
+        <div className="mt-3 flex flex-wrap items-center gap-3 border-b border-border pb-3">
+          <Avatar author={data.authors[watching.author_id]} />
+          <p className="flex items-center gap-1.5 text-sm font-bold">
+            @{data.authors[watching.author_id]?.username ?? "member"}
+            <AccountMarks userId={watching.author_id} marks={data.marks} />
+          </p>
+          <span className="text-xs text-muted-foreground">{timeAgo(watching.created_at)}</span>
+          <span className="ml-auto">
+            <PostActions post={watching} data={data} onToggleComments={() => undefined} />
+          </span>
+        </div>
+        {watching.body && (
+          <p className="mt-3 whitespace-pre-wrap rounded-xl bg-muted p-3 text-[15px] leading-relaxed">
+            {watching.body}
+          </p>
+        )}
+        <CommentBox postId={watching.id} data={data} />
+      </div>
       <aside>
         <h3 className="border-t-4 border-news-red pt-2 font-typewriter text-sm font-bold uppercase tracking-wide">
           Up next
@@ -724,10 +825,10 @@ export function VideoGrid({ data }: { data: SonkData }) {
             <li key={v.id}>
               <button
                 type="button"
-                onClick={() => setActive(v)}
-                className="flex w-full gap-3 text-left hover:bg-muted"
+                onClick={() => setWatchId(v.id)}
+                className={cn("flex w-full gap-3 text-left hover:bg-muted", focusRing)}
               >
-                <span className="relative block h-16 w-28 shrink-0 border-2 border-border bg-muted">
+                <span className="relative block h-16 w-28 shrink-0 overflow-hidden rounded-lg bg-muted">
                   {v.thumbnail_url ? (
                     <img
                       src={v.thumbnail_url}
@@ -757,6 +858,58 @@ export function VideoGrid({ data }: { data: SonkData }) {
         </ul>
       </aside>
     </div>
+  );
+}
+
+function VideoCard({
+  video,
+  data,
+  onOpen,
+}: {
+  video: SonkPost;
+  data: SonkData;
+  onOpen: () => void;
+}) {
+  return (
+    <article>
+      <button
+        type="button"
+        onClick={onOpen}
+        aria-label={`Watch ${video.title ?? "this video"}`}
+        className={cn(
+          "block aspect-video w-full overflow-hidden rounded-xl bg-muted",
+          focusRing,
+        )}
+      >
+        {video.thumbnail_url ? (
+          <img
+            src={video.thumbnail_url}
+            alt=""
+            loading="lazy"
+            className="h-full w-full object-cover"
+          />
+        ) : video.media_url ? (
+          <video src={video.media_url} muted className="h-full w-full object-cover" />
+        ) : (
+          <Play className="m-auto h-8 w-8 text-muted-foreground" aria-hidden="true" />
+        )}
+      </button>
+      <div className="mt-3 flex gap-3">
+        <Avatar author={data.authors[video.author_id]} />
+        <div className="min-w-0">
+          <h3 className="line-clamp-2 text-sm font-bold leading-snug">
+            {video.title ?? "Untitled"}
+          </h3>
+          <p className="mt-1 flex items-center gap-1.5 text-xs text-muted-foreground">
+            @{data.authors[video.author_id]?.username ?? "member"}
+            <AccountMarks userId={video.author_id} marks={data.marks} />
+          </p>
+          <p className="text-xs text-muted-foreground">
+            {data.likes[video.id] ?? 0} likes · {timeAgo(video.created_at)}
+          </p>
+        </div>
+      </div>
+    </article>
   );
 }
 

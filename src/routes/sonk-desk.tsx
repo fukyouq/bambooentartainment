@@ -339,6 +339,13 @@ function VerificationRequests({ rank }: { rank: number }) {
     toast.success("Account verified");
   };
 
+  const removeVerification = async (userId: string) => {
+    if (!window.confirm("Remove verification from this account?")) return;
+    const { error } = await supabase.from("sonk_verification").delete().eq("user_id", userId);
+    if (error) return toast.error(error.message);
+    toast.success("Verification removed");
+  };
+
   const [directUser, setDirectUser] = useState("");
   const [directCat, setDirectCat] = useState<VerifyCategory>("individual");
 
@@ -452,6 +459,13 @@ function VerificationRequests({ rank }: { rank: number }) {
               onClick={() => directUser && void verifyDirect(directUser, directCat)}
             >
               Verify account
+            </button>
+            <button
+              type="button"
+              className={btn}
+              onClick={() => directUser && void removeVerification(directUser)}
+            >
+              Remove verification
             </button>
           </div>
         </div>
