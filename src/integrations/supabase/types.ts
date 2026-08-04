@@ -584,6 +584,7 @@ export type Database = {
       }
       sonk_verification_requests: {
         Row: {
+          article_links: string[]
           category: Database["public"]["Enums"]["verify_category"]
           city: string | null
           company_documents_url: string | null
@@ -602,6 +603,7 @@ export type Database = {
           written_request: string | null
         }
         Insert: {
+          article_links?: string[]
           category: Database["public"]["Enums"]["verify_category"]
           city?: string | null
           company_documents_url?: string | null
@@ -620,6 +622,7 @@ export type Database = {
           written_request?: string | null
         }
         Update: {
+          article_links?: string[]
           category?: Database["public"]["Enums"]["verify_category"]
           city?: string | null
           company_documents_url?: string | null
@@ -700,6 +703,13 @@ export type Database = {
       role_rank: {
         Args: { _role: Database["public"]["Enums"]["app_role"] }
         Returns: number
+      }
+      sonk_effect_levels: {
+        Args: { _ids: string[] }
+        Returns: {
+          user_id: string
+          warning_count: number
+        }[]
       }
       sonk_rank: { Args: { _user_id: string }; Returns: number }
       sonk_role_rank: {

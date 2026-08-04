@@ -8,7 +8,7 @@ import { SiteFooter } from "@/components/SiteFooter";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { AvatarUpload } from "@/components/AvatarUpload";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { ROLE_LABELS, type Article } from "@/lib/bamboo";
@@ -144,14 +144,10 @@ function ProfilePage() {
                   />
                 </div>
                 <div className="sm:col-span-2">
-                  <Label htmlFor="avatar">Profile picture URL</Label>
-                  <Input
-                    id="avatar"
-                    maxLength={500}
-                    value={avatar}
-                    onChange={(e) => setAvatar(e.target.value)}
-                    placeholder="https://…"
-                  />
+                  <Label htmlFor="avatar">Profile picture</Label>
+                  <div id="avatar" className="mt-2">
+                    <AvatarUpload userId={user.id} value={avatar} onChange={setAvatar} />
+                  </div>
                 </div>
               </div>
               <Button className="mt-4" disabled={busy} onClick={() => void save()}>

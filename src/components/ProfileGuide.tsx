@@ -2,9 +2,9 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
-import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
+import { AvatarUpload } from "@/components/AvatarUpload";
 
 export function ProfileGuide() {
   const { user, profile, refreshProfile } = useAuth();
@@ -17,7 +17,7 @@ export function ProfileGuide() {
 
   const save = async () => {
     if (!bio.trim() || !avatar.trim()) {
-      toast.error("Add both a bio and a profile picture link.");
+      toast.error("Add a bio and upload a profile picture.");
       return;
     }
     setSaving(true);
@@ -45,12 +45,7 @@ export function ProfileGuide() {
           onChange={(e) => setBio(e.target.value)}
         />
         <div className="flex flex-col gap-3">
-          <Input
-            placeholder="Profile picture URL"
-            value={avatar}
-            maxLength={500}
-            onChange={(e) => setAvatar(e.target.value)}
-          />
+          <AvatarUpload userId={user.id} value={avatar} onChange={setAvatar} showUrlField={false} />
           <Button onClick={() => void save()} disabled={saving}>
             {saving ? "Saving..." : "Save profile"}
           </Button>
