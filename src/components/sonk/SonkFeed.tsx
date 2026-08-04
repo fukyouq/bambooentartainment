@@ -751,87 +751,222 @@ export function ShortsReel({ data }: { data: SonkData }) {
   );
 }
 
-/** YouTube-style videos surface: a thumbnail grid, then a watch view. */
-export function VideoGrid({ data }: { data: SonkData }) {
-  const videos = data.posts.filter((p) => p.kind === "video");
-  const [watchId, setWatchId] = useState<string | null>(null);
-  const watching = videos.find((v) => v.id === watchId) ?? null;
-  const rest = useMemo(
-    () => videos.filter((v) => v.id !== watching?.id),
-    [videos, watching],
+/** YouTube filter chips shown above the thumbnail grid. */
+const VIDEO_CHIPS = ["All", "Recently uploaded", "Popular", "Verified"] as const;
+type VideoChip = (typeof VIDEO_CHIPS)[number];
+
+const chipClass = (active: boolean) =>
+  cn(
+    "h-9 shrink-0 whitespace-nowrap rounded-lg px-3 text-sm font-medium",
+    focusRing,
+    active ? "bg-foreground text-background" : "bg-muted hover:bg-border",
   );
 
-  if (!videos.length)
+const pill =
+  "inline-flex h-9 items-center gap-2 rounded-full bg-muted px-4 text-sm font-medium hover:bg-border";
+
+/** YouTube-style videos surface: filter chips, a thumbnail grid, then a watch page. */
+export function VideoGrid({ data }: { data: SonkData }) {
+  const all = data.posts.filter((p) => p.kind === "video");
+  const [chip, setChip] = useState<VideoChip>("All");
+  const [watchId, setWatchId] = useState<string | null>(null);
+
+  const videos = useMemo(() => {
+    const list = [...all];
+    if (chip === "Popular")
+      return list.sort((a, b) => (data.likes[b.id] ?? 0) - (data.likes[a.id] ?? 0));
+    if (chip === "Verified")
+      return list.filter(
+        (v) => data.marks.verification[v.author_id] || data.marks.badges[v.author_id]?.length,
+      );
+    return list; // "All" and "Recently uploaded" are already newest-first
+  }, [all, chip, data.likes, data.marks]);
+
+  const watching = all.find((v) => v.id === watchId) ?? null;
+  const rest = useMemo(() => all.filter((v) => v.id !== watching?.id), [all, watching]);
+
+  if (!all.length)
     return <p className="py-10 text-center text-muted-foreground">No videos yet.</p>;
 
   if (!watching)
     return (
-      <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
-        {videos.map((v) => (
-          <VideoCard key={v.id} video={v} data={data} onOpen={() => setWatchId(v.id)} />
-        ))}
+      <div>
+        <div
+          role="tablist"
+          aria-label="Filter videos"
+          className="mb-5 flex gap-3 overflow-x-auto pb-1"
+        >
+          {VIDEO_CHIPS.map((c) => (
+            <button
+              key={c}
+              type="button"
+              role="tab"
+              aria-selected={chip === c}
+              onClick={() => setChip(c)}
+              className={chipClass(chip === c)}
+            >
+              {c}
+            </button>
+          ))}
+        </div>
+        {videos.length === 0 ? (
+          <p className="py-10 text-center text-muted-foreground">Nothing in this filter yet.</p>
+        ) : (
+          <div className="grid gap-x-4 gap-y-8 sm:grid-cols-2 xl:grid-cols-3">
+            {videos.map((v) => (
+              <VideoCard key={v.id} video={v} data={data} onOpen={() => setWatchId(v.id)} />
+            ))}
+          </div>
+        )}
       </div>
     );
 
+  return <WatchPage video={watching} rest={rest} data={data} onWatch={setWatchId} />;
+}
+
+/** The YouTube watch page: player, title, channel bar, action pills, description, comments, up next. */
+function WatchPage({
+  video,
+  rest,
+  data,
+  onWatch,
+}: {
+  video: SonkPost;
+  rest: SonkPost[];
+  data: SonkData;
+  onWatch: (id: string | null) => void;
+}) {
+  const [expanded, setExpanded] = useState(false);
+  const liked = data.liked.has(video.id);
+  const dislike = data.dislikeOnly(video.author_id);
+  const author = data.authors[video.author_id];
+
   return (
-    <div className="grid gap-8 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
-      <div id={watching.id}>
+    <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_360px]">
+      <div id={video.id}>
         <button
           type="button"
-          onClick={() => setWatchId(null)}
-          className={cn("mb-3 min-h-11 text-sm font-bold underline", focusRing)}
+          onClick={() => onWatch(null)}
+          className={cn("mb-3 inline-flex h-9 items-center text-sm font-medium underline", focusRing)}
         >
           ← Back to all videos
         </button>
         <div className="aspect-video w-full overflow-hidden rounded-xl bg-foreground">
-          {watching.media_url ? (
+          {video.media_url ? (
             <video
-              src={watching.media_url}
-              poster={watching.thumbnail_url ?? undefined}
+              src={video.media_url}
+              poster={video.thumbnail_url ?? undefined}
               controls
               autoPlay
               className="h-full w-full"
             />
           ) : (
-            <img
-              src={watching.thumbnail_url ?? ""}
-              alt=""
-              className="h-full w-full object-cover"
-            />
+            <img src={video.thumbnail_url ?? ""} alt="" className="h-full w-full object-cover" />
           )}
         </div>
-        <h3 className="mt-3 text-xl font-bold tracking-tight">{watching.title ?? "Untitled"}</h3>
-        <div className="mt-3 flex flex-wrap items-center gap-3 border-b border-border pb-3">
-          <Avatar author={data.authors[watching.author_id]} />
-          <p className="flex items-center gap-1.5 text-sm font-bold">
-            @{data.authors[watching.author_id]?.username ?? "member"}
-            <AccountMarks userId={watching.author_id} marks={data.marks} />
-          </p>
-          <span className="text-xs text-muted-foreground">{timeAgo(watching.created_at)}</span>
-          <span className="ml-auto">
-            <PostActions post={watching} data={data} onToggleComments={() => undefined} />
-          </span>
-        </div>
-        {watching.body && (
-          <p className="mt-3 whitespace-pre-wrap rounded-xl bg-muted p-3 text-[15px] leading-relaxed">
-            {watching.body}
-          </p>
-        )}
-        <CommentBox postId={watching.id} data={data} />
-      </div>
-      <aside>
-        <h3 className="border-t-4 border-news-red pt-2 font-typewriter text-sm font-bold uppercase tracking-wide">
-          Up next
+
+        <h3 className="mt-3 text-xl font-bold leading-snug tracking-tight">
+          {video.title ?? "Untitled"}
         </h3>
-        <ul className="mt-3 space-y-3">
+
+        <div className="mt-3 flex flex-wrap items-center gap-3">
+          <Avatar author={author} />
+          <div className="mr-2 min-w-0">
+            <p className="flex items-center gap-1.5 text-sm font-bold">
+              @{author?.username ?? "member"}
+              <AccountMarks userId={video.author_id} marks={data.marks} />
+            </p>
+            <p className="text-xs text-muted-foreground">Sonk channel</p>
+          </div>
+          <Link
+            to="/sonk-studio"
+            className={cn(
+              "inline-flex h-9 items-center rounded-full bg-foreground px-4 text-sm font-bold text-background",
+              focusRing,
+            )}
+          >
+            Channel
+          </Link>
+
+          <div className="ml-auto flex flex-wrap items-center gap-2">
+            <div className="flex h-9 items-center rounded-full bg-muted">
+              <button
+                type="button"
+                onClick={() => data.toggleLike(video.id)}
+                aria-pressed={liked}
+                aria-label={dislike ? "Dislike this video" : "Like this video"}
+                className={cn(
+                  "flex h-9 items-center gap-2 rounded-l-full px-4 text-sm font-medium hover:bg-border",
+                  focusRing,
+                  liked && "text-news-red",
+                )}
+              >
+                {data.likeIcon(video.author_id, liked)}
+                {data.likes[video.id] ?? 0}
+              </button>
+              <span className="h-5 w-px bg-border" aria-hidden="true" />
+              <button
+                type="button"
+                aria-label="Dislike"
+                onClick={() => toast.info("Dislikes are not counted on Sonk")}
+                className={cn(
+                  "flex h-9 items-center rounded-r-full px-4 hover:bg-border",
+                  focusRing,
+                )}
+              >
+                <ThumbsDown className="h-4 w-4" aria-hidden="true" />
+              </button>
+            </div>
+            <button
+              type="button"
+              className={cn(pill, focusRing)}
+              onClick={() => {
+                void navigator.clipboard
+                  ?.writeText(`${window.location.origin}/announcements#${video.id}`)
+                  .then(() => toast.success("Link copied"));
+              }}
+            >
+              <Share2 className="h-4 w-4" aria-hidden="true" />
+              Share
+            </button>
+            <PostActions post={video} data={data} onToggleComments={() => undefined} />
+          </div>
+        </div>
+
+        <div className="mt-4 rounded-xl bg-muted p-3 text-[14px] leading-relaxed">
+          <p className="font-bold">
+            {data.likes[video.id] ?? 0} likes · {timeAgo(video.created_at)}
+          </p>
+          {video.body && (
+            <>
+              <p className={cn("mt-1 whitespace-pre-wrap", !expanded && "line-clamp-3")}>
+                {video.body}
+              </p>
+              <button
+                type="button"
+                onClick={() => setExpanded((e) => !e)}
+                className={cn("mt-1 text-sm font-bold", focusRing)}
+              >
+                {expanded ? "Show less" : "…more"}
+              </button>
+            </>
+          )}
+        </div>
+
+        <CommentBox postId={video.id} data={data} />
+      </div>
+
+      <aside>
+        <h3 className="text-sm font-bold">Up next</h3>
+        <ul className="mt-3 space-y-2">
           {rest.map((v) => (
             <li key={v.id}>
               <button
                 type="button"
-                onClick={() => setWatchId(v.id)}
-                className={cn("flex w-full gap-3 text-left hover:bg-muted", focusRing)}
+                onClick={() => onWatch(v.id)}
+                className={cn("flex w-full gap-2 rounded-lg p-1 text-left hover:bg-muted", focusRing)}
               >
-                <span className="relative block h-16 w-28 shrink-0 overflow-hidden rounded-lg bg-muted">
+                <span className="relative block h-[94px] w-[168px] shrink-0 overflow-hidden rounded-lg bg-muted">
                   {v.thumbnail_url ? (
                     <img
                       src={v.thumbnail_url}
@@ -847,11 +982,14 @@ export function VideoGrid({ data }: { data: SonkData }) {
                   )}
                 </span>
                 <span className="min-w-0">
-                  <span className="line-clamp-2 block text-sm font-bold">
+                  <span className="line-clamp-2 block text-sm font-bold leading-snug">
                     {v.title ?? "Untitled"}
                   </span>
+                  <span className="mt-1 block text-xs text-muted-foreground">
+                    @{data.authors[v.author_id]?.username ?? "member"}
+                  </span>
                   <span className="block text-xs text-muted-foreground">
-                    @{data.authors[v.author_id]?.username ?? "member"} · {timeAgo(v.created_at)}
+                    {data.likes[v.id] ?? 0} likes · {timeAgo(v.created_at)}
                   </span>
                 </span>
               </button>
@@ -873,18 +1011,29 @@ function VideoCard({
   data: SonkData;
   onOpen: () => void;
 }) {
+  const [hover, setHover] = useState(false);
   return (
-    <article>
+    <article onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}>
       <button
         type="button"
         onClick={onOpen}
         aria-label={`Watch ${video.title ?? "this video"}`}
         className={cn(
-          "block aspect-video w-full overflow-hidden rounded-xl bg-muted",
+          "relative block aspect-video w-full overflow-hidden rounded-xl bg-muted transition-[border-radius] duration-200",
+          hover && "rounded-none",
           focusRing,
         )}
       >
-        {video.thumbnail_url ? (
+        {hover && video.media_url ? (
+          <video
+            src={video.media_url}
+            muted
+            autoPlay
+            loop
+            playsInline
+            className="h-full w-full object-cover"
+          />
+        ) : video.thumbnail_url ? (
           <img
             src={video.thumbnail_url}
             alt=""
@@ -896,18 +1045,21 @@ function VideoCard({
         ) : (
           <Play className="m-auto h-8 w-8 text-muted-foreground" aria-hidden="true" />
         )}
+        <span className="absolute bottom-1.5 right-1.5 rounded bg-foreground/90 px-1 text-[11px] font-bold text-background">
+          Video
+        </span>
       </button>
       <div className="mt-3 flex gap-3">
         <Avatar author={data.authors[video.author_id]} />
         <div className="min-w-0">
-          <h3 className="line-clamp-2 text-sm font-bold leading-snug">
+          <h3 className="line-clamp-2 text-[15px] font-bold leading-snug">
             {video.title ?? "Untitled"}
           </h3>
-          <p className="mt-1 flex items-center gap-1.5 text-xs text-muted-foreground">
+          <p className="mt-1 flex items-center gap-1.5 text-[13px] text-muted-foreground">
             @{data.authors[video.author_id]?.username ?? "member"}
             <AccountMarks userId={video.author_id} marks={data.marks} />
           </p>
-          <p className="text-xs text-muted-foreground">
+          <p className="text-[13px] text-muted-foreground">
             {data.likes[video.id] ?? 0} likes · {timeAgo(video.created_at)}
           </p>
         </div>
