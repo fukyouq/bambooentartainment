@@ -100,7 +100,9 @@ export function useSonk(search = ""): SonkData & { loading: boolean } {
           supabase.from("public_profiles").select("id, username, avatar_url").in("id", ids),
           supabase.from("sonk_verification").select("user_id, category").in("user_id", ids),
           supabase.from("sonk_badges").select("user_id, badge").in("user_id", ids),
-          supabase.from("sonk_status").select("user_id, warning_count").in("user_id", ids),
+          // Warning/ban rows are private: this helper returns only the capped warning level
+          // needed to apply feed effects, never the ban flag.
+          supabase.rpc("sonk_effect_levels", { _ids: ids }),
         ]);
       const map: Record<string, SonkAuthor> = {};
       for (const p of (profs ?? []) as SonkAuthor[]) map[p.id] = p;
@@ -114,7 +116,8 @@ export function useSonk(search = ""): SonkData & { loading: boolean } {
       setMarks({ verification, badges });
 
       const warn: Record<string, number> = {};
-      for (const s of statuses ?? []) warn[s.user_id] = s.warning_count;
+      for (const s of (statuses ?? []) as { user_id: string; warning_count: number }[])
+        warn[s.user_id] = s.warning_count;
       setWarnings(warn);
     }
 
