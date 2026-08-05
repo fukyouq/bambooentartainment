@@ -2,6 +2,7 @@ import { useRef, useState } from "react";
 import { ImagePlus } from "lucide-react";
 import { toast } from "sonner";
 import { uploadSonkMedia } from "@/lib/sonk-media";
+import { AVATAR_ALLOWED_TYPES, processAvatarFile } from "@/lib/avatar-image";
 
 interface Props {
   userId: string;
@@ -17,10 +18,10 @@ export function AvatarUpload({ userId, value, onChange, showUrlField = true }: P
   const inputRef = useRef<HTMLInputElement | null>(null);
 
   const pick = async (file: File) => {
-    if (!file.type.startsWith("image/")) return toast.error("Pick an image file.");
     setBusy(true);
     try {
-      onChange(await uploadSonkMedia(userId, file, file.name));
+      const processed = await processAvatarFile(file);
+      onChange(await uploadSonkMedia(userId, processed.blob, processed.filename));
       toast.success("Profile picture uploaded");
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Upload failed");
@@ -54,14 +55,18 @@ export function AvatarUpload({ userId, value, onChange, showUrlField = true }: P
         <input
           ref={inputRef}
           type="file"
-          accept="image/*"
+          accept={AVATAR_ALLOWED_TYPES.join(",")}
           className="sr-only"
           onChange={(e) => {
             const file = e.target.files?.[0];
             if (file) void pick(file);
+            e.target.value = "";
           }}
         />
       </div>
+      <p className="text-xs text-muted-foreground">
+        JPEG, PNG, WebP or GIF · up to 5MB · resized to 1024px and stripped of metadata.
+      </p>
       {showUrlField && (
         <input
           aria-label="Profile picture URL"
