@@ -426,6 +426,39 @@ export type Database = {
           },
         ]
       }
+      sonk_moderation_log: {
+        Row: {
+          action: string
+          actor_id: string | null
+          created_at: string
+          details: Json
+          id: string
+          subject_id: string | null
+          target_id: string
+          target_type: string
+        }
+        Insert: {
+          action: string
+          actor_id?: string | null
+          created_at?: string
+          details?: Json
+          id?: string
+          subject_id?: string | null
+          target_id: string
+          target_type: string
+        }
+        Update: {
+          action?: string
+          actor_id?: string | null
+          created_at?: string
+          details?: Json
+          id?: string
+          subject_id?: string | null
+          target_id?: string
+          target_type?: string
+        }
+        Relationships: []
+      }
       sonk_music_requests: {
         Row: {
           catalogue_url: string | null

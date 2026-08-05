@@ -610,6 +610,21 @@ function MusicPanel() {
   const viewCount = Number(views) || 0;
   const meets = songCount >= MUSIC_MIN_SONGS && viewCount >= MUSIC_MIN_VIEWS;
 
+  const revoke = async () => {
+    if (!window.confirm("Remove your music verification? You can request it again later.")) return;
+    setBusy(true);
+    const { error } = await supabase
+      .from("sonk_badges")
+      .delete()
+      .eq("user_id", user!.id)
+      .eq("badge", "music");
+    setBusy(false);
+    if (error) return toast.error(error.message);
+    toast.success("Music verification removed");
+    void qc.invalidateQueries({ queryKey: ["my-music-badge"] });
+    void qc.invalidateQueries({ queryKey: ["my-badges"] });
+  };
+
   const submit = async () => {
     if (!meets)
       return toast.error(
@@ -634,10 +649,24 @@ function MusicPanel() {
         Music verification
       </h2>
       {hasBadge ? (
-        <p className="mt-2 flex items-center gap-2 text-sm font-bold">
-          <SonkBadgeMark badge={"music" as BadgeKind} />
-          Music badge granted — featured sounds are unlocked for your account.
-        </p>
+        <div className="mt-2 space-y-3">
+          <p className="flex items-center gap-2 text-sm font-bold">
+            <SonkBadgeMark badge={"music" as BadgeKind} />
+            Approved — music badge granted and featured sounds unlocked.
+          </p>
+          {request && (
+            <p className="text-sm text-muted-foreground">
+              Verified with {request.song_count} songs ·{" "}
+              {request.total_views.toLocaleString()} combined views
+            </p>
+          )}
+          <p className="text-xs text-muted-foreground">
+            Removing verification takes the badge off your account and locks featured sounds again.
+          </p>
+          <button type="button" disabled={busy} onClick={() => void revoke()} className={btnRed}>
+            {busy ? "Removing…" : "Remove music verification"}
+          </button>
+        </div>
       ) : request && request.status !== "denied" ? (
         <>
           <p className="mt-2 text-sm">
