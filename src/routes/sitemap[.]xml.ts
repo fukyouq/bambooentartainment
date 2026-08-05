@@ -1,13 +1,29 @@
 import { createFileRoute } from "@tanstack/react-router";
 import type {} from "@tanstack/react-start";
 
-// TODO: replace with your project URL once a project name or custom domain is set.
-const BASE_URL = "";
+const BASE_URL = "https://bambooentartainment.lovable.app";
 
 interface SitemapEntry {
   path: string;
   changefreq?: "always" | "hourly" | "daily" | "weekly" | "monthly" | "yearly" | "never";
   priority?: string;
+}
+
+async function publishedArticlePaths(): Promise<string[]> {
+  const url = import.meta.env['VITE_SUPABASE_URL'];
+  const key = import.meta.env['VITE_SUPABASE_PUBLISHABLE_KEY'];
+  if (!url || !key) return [];
+  try {
+    const res = await fetch(
+      `${url}/rest/v1/articles?select=id&status=eq.published&blacklisted=eq.false`,
+      { headers: { apikey: key } },
+    );
+    if (!res.ok) return [];
+    const rows = (await res.json()) as Array<{ id: string }>;
+    return rows.map((r) => `/article/${r.id}`);
+  } catch {
+    return [];
+  }
 }
 
 export const Route = createFileRoute("/sitemap.xml")({
@@ -17,8 +33,12 @@ export const Route = createFileRoute("/sitemap.xml")({
         const entries: SitemapEntry[] = [
           { path: "/", changefreq: "weekly", priority: "1.0" },
           { path: "/news", changefreq: "hourly", priority: "0.9" },
+          { path: "/announcements", changefreq: "hourly", priority: "0.8" },
           { path: "/auth", changefreq: "yearly", priority: "0.3" },
         ];
+        for (const path of await publishedArticlePaths()) {
+          entries.push({ path, changefreq: "weekly", priority: "0.7" });
+        }
 
         const urls = entries.map((e) =>
           [
