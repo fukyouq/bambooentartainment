@@ -27,7 +27,9 @@ export const Route = createFileRoute("/announcements")({
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
+      { property: "og:url", content: "https://bambooentartainment.lovable.app/announcements" },
     ],
+    links: [{ rel: "canonical", href: "https://bambooentartainment.lovable.app/announcements" }],
   }),
   component: SonkPage,
 });
@@ -54,8 +56,6 @@ function SonkPage() {
 
   return (
     <SonkShell tab={tab} onTab={setTab} query={query} onQuery={setQuery}>
-      <h1 className="sr-only">Sonk</h1>
-
       {tab !== "shorts" && (
         <div className="mb-6">
           <SonkComposer kind={tab === "videos" ? "video" : "post"} onDone={() => void sonk.reload()} />
