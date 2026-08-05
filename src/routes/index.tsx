@@ -23,6 +23,36 @@ export const Route = createFileRoute("/")({
         content:
           "Bamboo Entartainment is a news medium and a social media app and site, all in one place.",
       },
+      { property: "og:type", content: "website" },
+      { property: "og:url", content: "https://bambooentartainment.lovable.app/" },
+    ],
+    links: [{ rel: "canonical", href: "https://bambooentartainment.lovable.app/" }],
+    scripts: [
+      {
+        type: "application/ld+json",
+        children: JSON.stringify({
+          "@context": "https://schema.org",
+          "@graph": [
+            {
+              "@type": "Organization",
+              name: "Bamboo Entartainment",
+              url: "https://bambooentartainment.lovable.app/",
+              description:
+                "Bamboo Entartainment is a news medium and a social media app and site, all in one place.",
+            },
+            {
+              "@type": "WebSite",
+              name: "Bamboo Entartainment",
+              url: "https://bambooentartainment.lovable.app/",
+              potentialAction: {
+                "@type": "SearchAction",
+                target: "https://bambooentartainment.lovable.app/news?q={search_term_string}",
+                "query-input": "required name=search_term_string",
+              },
+            },
+          ],
+        }),
+      },
     ],
   }),
   component: Index,
@@ -37,7 +67,10 @@ function Index() {
         <ProfileGuide />
         <section className="grid gap-8 border-t-4 border-bamboo pt-4 lg:grid-cols-[minmax(0,1fr)_280px]">
           <div>
-            <h1 className="text-4xl font-bold leading-[1.1] tracking-tight">Who are we?</h1>
+            <h1 className="text-4xl font-bold leading-[1.1] tracking-tight">
+              Bamboo Entartainment — Independent News &amp; Social Media
+            </h1>
+            <h2 className="mt-4 text-2xl font-bold tracking-tight">Who are we?</h2>
             <p className="mt-4 max-w-3xl text-lg leading-relaxed text-foreground/80">
               We are Bamboo Entartainment, we are a News Medium and a Social Media app and site, our
               Social Media site is like "Youtube", "Tiktok" and "Twitter/X" at the same time.
