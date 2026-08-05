@@ -12,14 +12,63 @@ import { Textarea } from "@/components/ui/textarea";
 import type { Article } from "@/lib/bamboo";
 
 export const Route = createFileRoute("/article/$articleId")({
-  head: () => ({
-    meta: [
-      { title: "Article — Bamboo News" },
-      { name: "description", content: "Read the full story on Bamboo News." },
-      { property: "og:title", content: "Article — Bamboo News" },
-      { property: "og:description", content: "Read the full story on Bamboo News." },
-    ],
-  }),
+  loader: async ({ params }) => {
+    const { data } = await supabase
+      .from("articles")
+      .select("title, description, image_url, created_at, author_name, category, status, blacklisted")
+      .eq("id", params.articleId)
+      .maybeSingle();
+    return { seo: data ?? null };
+  },
+  head: ({ params, loaderData }) => {
+    const a = loaderData?.seo;
+    const url = `https://bambooentartainment.lovable.app/article/${params.articleId}`;
+    const rawTitle = a?.title?.trim();
+    const title = rawTitle ? `${rawTitle.slice(0, 45)} — Bamboo News` : "Article — Bamboo News";
+    const summary = a?.description?.trim().replace(/\s+/g, " ") ?? "";
+    const description =
+      summary.length >= 50
+        ? summary.slice(0, 157)
+        : `${summary ? `${summary} ` : ""}Read the full story and reader comments on Bamboo News, the newsroom of Bamboo Entartainment.`.slice(
+            0,
+            157,
+          );
+    const meta: Array<Record<string, string>> = [
+      { title },
+      { name: "description", content: description },
+      { property: "og:title", content: rawTitle ?? "Bamboo News" },
+      { property: "og:description", content: description },
+      { property: "og:type", content: "article" },
+      { property: "og:url", content: url },
+      { name: "twitter:card", content: a?.image_url ? "summary_large_image" : "summary" },
+    ];
+    if (a?.image_url?.startsWith("https://")) {
+      meta.push({ property: "og:image", content: a.image_url });
+      meta.push({ name: "twitter:image", content: a.image_url });
+    }
+    return {
+      meta,
+      links: [{ rel: "canonical", href: url }],
+      scripts: a
+        ? [
+            {
+              type: "application/ld+json",
+              children: JSON.stringify({
+                "@context": "https://schema.org",
+                "@type": "NewsArticle",
+                headline: rawTitle,
+                description: summary || undefined,
+                image: a.image_url ?? undefined,
+                datePublished: a.created_at,
+                author: { "@type": "Person", name: a.author_name },
+                publisher: { "@type": "Organization", name: "Bamboo Entartainment" },
+                mainEntityOfPage: url,
+              }),
+            },
+          ]
+        : undefined,
+    };
+  },
   component: ArticlePage,
 });
 

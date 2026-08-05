@@ -21,10 +21,10 @@ export function ProfileGuide() {
       return;
     }
     setSaving(true);
-    const { error } = await supabase
-      .from("profiles")
-      .update({ bio: bio.trim().slice(0, 500), avatar_url: avatar.trim().slice(0, 500) })
-      .eq("id", user.id);
+    const values = { bio: bio.trim().slice(0, 500), avatar_url: avatar.trim().slice(0, 500) };
+    // A database trigger mirrors these fields into public_profiles, which powers
+    // avatars/bios in Sonk feeds and article comments.
+    const { error } = await supabase.from("profiles").update(values).eq("id", user.id);
     setSaving(false);
     if (error) return toast.error(error.message);
     await refreshProfile();
@@ -38,12 +38,18 @@ export function ProfileGuide() {
         Add a bio and a profile picture — this guide disappears once both are saved.
       </p>
       <div className="mt-4 grid gap-3 sm:grid-cols-2">
-        <Textarea
-          placeholder="Your bio"
-          value={bio}
-          maxLength={500}
-          onChange={(e) => setBio(e.target.value)}
-        />
+        <div className="flex flex-col gap-1.5">
+          <label htmlFor="profile-guide-bio" className="text-xs font-bold uppercase tracking-wide">
+            Your bio
+          </label>
+          <Textarea
+            id="profile-guide-bio"
+            placeholder="Your bio"
+            value={bio}
+            maxLength={500}
+            onChange={(e) => setBio(e.target.value)}
+          />
+        </div>
         <div className="flex flex-col gap-3">
           <AvatarUpload userId={user.id} value={avatar} onChange={setAvatar} showUrlField={false} />
           <Button onClick={() => void save()} disabled={saving}>
