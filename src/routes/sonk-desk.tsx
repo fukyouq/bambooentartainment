@@ -83,6 +83,7 @@ function DeskPage() {
       <BadgeGrants rank={sonkRank} />
       <Blacklist />
       <Blocks />
+      <ModerationLog />
     </Shell>
   );
 }
@@ -97,6 +98,85 @@ function useMembers() {
       return map;
     },
   });
+}
+
+const ACTION_LABEL: Record<string, string> = {
+  status_created: "warning record created",
+  warning_count_changed: "warning count changed",
+  banned: "account banned",
+  unbanned: "account unbanned",
+  post_hidden: "post hidden",
+  post_unhidden: "post restored",
+  post_blacklisted: "post blacklisted",
+  post_unblacklisted: "post un-blacklisted",
+  comment_hidden: "comment hidden",
+  comment_unhidden: "comment restored",
+};
+
+/** Staff-only audit trail of warning, ban and visibility changes. */
+function ModerationLog() {
+  const { data: names = {} } = useMembers();
+  const { data: entries = [], error } = useQuery({
+    queryKey: ["desk-moderation-log"],
+    queryFn: async () => {
+      const { data, error: err } = await supabase
+        .from("sonk_moderation_log")
+        .select("id, target_type, target_id, subject_id, actor_id, action, details, created_at")
+        .order("created_at", { ascending: false })
+        .limit(100);
+      if (err) throw err;
+      return data ?? [];
+    },
+  });
+
+  return (
+    <section className={box} aria-labelledby="moderation-log">
+      <h2 id="moderation-log" className="font-typewriter text-xl font-bold">
+        Moderation audit log
+      </h2>
+      <p className="mt-1 text-sm text-muted-foreground">
+        Every warning-count, ban and visibility change, visible to staff only.
+      </p>
+      {error ? (
+        <p className="mt-3 text-sm text-news-red">Could not load the audit log.</p>
+      ) : entries.length === 0 ? (
+        <p className="mt-3 text-sm text-muted-foreground">No moderation actions recorded yet.</p>
+      ) : (
+        <ul className="mt-3 divide-y-2 divide-border">
+          {entries.map((e) => {
+            const details = (e.details ?? {}) as Record<string, unknown>;
+            const prev = details["previous_warning_count"];
+            const now = details["warning_count"];
+            return (
+              <li key={e.id} className="py-2 text-sm">
+                <span className="font-bold">{ACTION_LABEL[e.action] ?? e.action}</span>
+                {" · "}
+                <span>{e.subject_id ? (names[e.subject_id] ?? "member") : "unknown"}</span>
+                {e.actor_id && (
+                  <>
+                    {" · by "}
+                    <span>{names[e.actor_id] ?? "staff"}</span>
+                  </>
+                )}
+                {typeof now === "number" && (
+                  <span className="text-muted-foreground">
+                    {" · warnings "}
+                    {typeof prev === "number" ? `${prev} → ${now}` : now}
+                  </span>
+                )}
+                <span className="text-muted-foreground">
+                  {" · "}
+                  {e.target_type}
+                  {" · "}
+                  {timeAgo(e.created_at)}
+                </span>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </section>
+  );
 }
 
 function Reports() {
