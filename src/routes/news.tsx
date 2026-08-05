@@ -34,7 +34,11 @@ export const Route = createFileRoute("/news")({
         property: "og:description",
         content: "Breaking news, trending stories, sports, global affairs and more.",
       },
+      { property: "og:type", content: "website" },
+      { property: "og:url", content: "https://bambooentartainment.lovable.app/news" },
+      { name: "twitter:card", content: "summary" },
     ],
+    links: [{ rel: "canonical", href: "https://bambooentartainment.lovable.app/news" }],
   }),
   component: NewsPage,
 });
@@ -163,9 +167,13 @@ function NewsPage() {
         </div>
 
         <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-3 px-4 pb-3">
-          <label className="flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-muted-foreground">
+          <label
+            htmlFor="news-author-filter"
+            className="flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-muted-foreground"
+          >
             Author
             <select
+              id="news-author-filter"
               value={author}
               onChange={(e) => setAuthor(e.target.value)}
               className="h-8 border border-input bg-background px-2 text-xs font-normal normal-case text-foreground"
@@ -178,9 +186,13 @@ function NewsPage() {
               ))}
             </select>
           </label>
-          <label className="flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-muted-foreground">
+          <label
+            htmlFor="news-sport-filter"
+            className="flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-muted-foreground"
+          >
             Sport
             <select
+              id="news-sport-filter"
               value={sub}
               onChange={(e) => setSub(e.target.value as SportsSubcategory | "all")}
               className="h-8 border border-input bg-background px-2 text-xs font-normal normal-case text-foreground"
