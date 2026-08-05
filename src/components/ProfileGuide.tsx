@@ -22,18 +22,9 @@ export function ProfileGuide() {
     }
     setSaving(true);
     const values = { bio: bio.trim().slice(0, 500), avatar_url: avatar.trim().slice(0, 500) };
+    // A database trigger mirrors these fields into public_profiles, which powers
+    // avatars/bios in Sonk feeds and article comments.
     const { error } = await supabase.from("profiles").update(values).eq("id", user.id);
-    if (!error) {
-      // Mirror to the public-safe table so bios/avatars show in Sonk feeds and comments.
-      const { error: publicError } = await supabase
-        .from("public_profiles")
-        .update(values)
-        .eq("id", user.id);
-      if (publicError) {
-        setSaving(false);
-        return toast.error(publicError.message);
-      }
-    }
     setSaving(false);
     if (error) return toast.error(error.message);
     await refreshProfile();
