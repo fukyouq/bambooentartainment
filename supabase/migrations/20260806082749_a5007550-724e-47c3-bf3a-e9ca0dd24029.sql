@@ -1,0 +1,10 @@
+REVOKE ALL ON FUNCTION public.log_sonk_status_change() FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON FUNCTION public.log_sonk_post_visibility() FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON FUNCTION public.log_sonk_comment_visibility() FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON FUNCTION public.validate_ad_campaign() FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON FUNCTION public.handle_new_user() FROM PUBLIC;
+REVOKE ALL ON FUNCTION public.log_article_change() FROM PUBLIC;
+REVOKE ALL ON FUNCTION public.sync_public_profile_fields() FROM PUBLIC;
+REVOKE ALL ON FUNCTION public.sync_sonk_status() FROM PUBLIC;
+REVOKE ALL ON FUNCTION public.sonk_effect_levels(uuid[]) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.sonk_effect_levels(uuid[]) TO authenticated;
