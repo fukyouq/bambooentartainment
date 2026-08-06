@@ -53,9 +53,13 @@ function SonkPage() {
 
   const shorts = filtered.posts.filter((p) => p.kind === "short");
   const playing = shortId ? shorts.findIndex((s) => s.id === shortId) : -1;
+  const sectionHeading =
+    tab === "shorts" ? "Trending shorts" : tab === "videos" ? "Latest videos" : "Latest feed";
 
   return (
     <SonkShell tab={tab} onTab={setTab} query={query} onQuery={setQuery}>
+      <h2 className="mb-4 text-lg font-bold tracking-tight">{sectionHeading}</h2>
+
       {tab !== "shorts" && (
         <div className="mb-6">
           <SonkComposer kind={tab === "videos" ? "video" : "post"} onDone={() => void sonk.reload()} />

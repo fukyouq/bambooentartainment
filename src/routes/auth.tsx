@@ -13,9 +13,17 @@ export const Route = createFileRoute("/auth")({
   head: () => ({
     meta: [
       { title: "Sign in or Sign up — Bamboo Entartainment" },
-      { name: "description", content: "Create a Bamboo Entartainment account or sign in." },
+      {
+        name: "description",
+        content:
+          "Create a Bamboo Entartainment account or sign in to save stories, comment on the news and post on Sonk.",
+      },
       { property: "og:title", content: "Sign in or Sign up — Bamboo Entartainment" },
-      { property: "og:description", content: "Create a Bamboo Entartainment account or sign in." },
+      {
+        property: "og:description",
+        content:
+          "Create a Bamboo Entartainment account or sign in to save stories, comment on the news and post on Sonk.",
+      },
       { property: "og:type", content: "website" },
       { property: "og:url", content: "https://bambooentartainment.lovable.app/auth" },
     ],
