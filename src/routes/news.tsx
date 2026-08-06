@@ -1,5 +1,5 @@
 import { useMemo, useRef, useState } from "react";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { Search, X } from "lucide-react";
 import { OrangeHeader } from "@/components/OrangeHeader";
@@ -21,6 +21,10 @@ import {
 } from "@/lib/bamboo";
 
 export const Route = createFileRoute("/news")({
+  validateSearch: (search: Record<string, unknown>): { q?: string } => {
+    const raw = typeof search.q === "string" ? search.q.trim().slice(0, 120) : "";
+    return raw ? { q: raw } : {};
+  },
   head: () => ({
     meta: [
       { title: "Bamboo News — Breaking, Global, Sports & More" },
@@ -44,11 +48,20 @@ export const Route = createFileRoute("/news")({
 });
 
 function NewsPage() {
+  const navigate = useNavigate({ from: "/news" });
+  const { q = "" } = Route.useSearch();
   const [category, setCategory] = useState<Category>("breaking_news");
   const [sub, setSub] = useState<SportsSubcategory | "all">("all");
-  const [query, setQuery] = useState("");
   const [author, setAuthor] = useState("all");
   const [open, setOpen] = useState(false);
+  const query = q;
+  const setQuery = (value: string) => {
+    const next = value.slice(0, 120);
+    void navigate({
+      search: next.trim() ? { q: next } : {},
+      replace: true,
+    });
+  };
   const blurTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const { data: articles = [], isLoading } = useQuery({
