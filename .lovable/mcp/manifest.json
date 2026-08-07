@@ -1,0 +1,166 @@
+{
+  "version": 1,
+  "sdk_version": "0.26.1",
+  "path": "/mcp",
+  "auth": {
+    "type": "oauth",
+    "issuer": "https://jkwtvpfsdrrmfpmtbipt.supabase.co/auth/v1",
+    "accepted_audiences": [
+      "authenticated"
+    ]
+  },
+  "mcp": {
+    "server": {
+      "name": "bamboo-news-hub",
+      "version": "0.1.0",
+      "title": "Bamboo News Hub"
+    },
+    "tools": [
+      {
+        "name": "search_news",
+        "title": "Search Bamboo News",
+        "description": "Search published Bamboo News articles by keyword and optionally filter by category. Returns titles, categories, authors and ids.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {
+            "query": {
+              "description": "Keyword to match in the title or description.",
+              "type": "string"
+            },
+            "category": {
+              "description": "Restrict results to one news category.",
+              "type": "string",
+              "enum": [
+                "breaking_news",
+                "sports",
+                "global",
+                "health",
+                "food",
+                "conflicts",
+                "other"
+              ]
+            },
+            "limit": {
+              "description": "Max results (default 10).",
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 50
+            }
+          }
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "get_article",
+        "title": "Get news article",
+        "description": "Read one published Bamboo News article in full, including its comments.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {
+            "article_id": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+              "description": "The article id."
+            }
+          },
+          "required": [
+            "article_id"
+          ]
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "list_reading_list",
+        "title": "List reading list",
+        "description": "List the articles the signed-in user has saved to their Bamboo News reading list.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {}
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "save_article",
+        "title": "Save or unsave article",
+        "description": "Add an article to the signed-in user's reading list, or remove it.",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": false,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {
+            "article_id": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+              "description": "The article id."
+            },
+            "saved": {
+              "type": "boolean",
+              "description": "true to save the article, false to remove it from the reading list."
+            }
+          },
+          "required": [
+            "article_id",
+            "saved"
+          ]
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "list_sonk_posts",
+        "title": "List Sonk posts",
+        "description": "List recent visible Sonk posts (text posts, shorts or videos) from the social feed.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {
+            "kind": {
+              "description": "Filter by post kind.",
+              "type": "string",
+              "enum": [
+                "post",
+                "short",
+                "video"
+              ]
+            },
+            "limit": {
+              "description": "Max results (default 10).",
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 50
+            }
+          }
+        },
+        "outputSchema": null
+      }
+    ]
+  }
+}
