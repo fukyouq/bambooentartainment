@@ -10,6 +10,10 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/auth")({
+  validateSearch: (s: Record<string, unknown>): { next?: string } =>
+    typeof s.next === "string" && s.next.startsWith("/") && !s.next.startsWith("//")
+      ? { next: s.next }
+      : {},
   head: () => ({
     meta: [
       { title: "Sign in or Sign up — Bamboo Entartainment" },
@@ -42,6 +46,7 @@ const signUpSchema = z.object({
 function AuthPage() {
   const navigate = useNavigate();
   const location = useLocation();
+  const { next } = Route.useSearch();
   const { user } = useAuth();
   const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [form, setForm] = useState({ username: "", email: "", password: "", phone: "" });
@@ -52,8 +57,13 @@ function AuthPage() {
   }
 
   useEffect(() => {
-    if (user) void navigate({ to: "/" });
-  }, [user, navigate]);
+    if (!user) return;
+    if (next) {
+      window.location.href = next;
+      return;
+    }
+    void navigate({ to: "/" });
+  }, [user, navigate, next]);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
