@@ -44,10 +44,18 @@ export const createStaffUser = createServerFn({ method: "POST" })
         username: data.username,
         full_name: data.fullName,
         date_of_birth: data.dateOfBirth,
-        role: data.role,
       },
     });
     if (createError) throw new Error(createError.message);
+
+    const newUserId = created.user?.id;
+    if (newUserId && data.role !== "user") {
+      // Roles are never taken from signup metadata; grant it here after the rank check above.
+      const { error: roleError } = await supabaseAdmin
+        .from("user_roles")
+        .insert({ user_id: newUserId, role: data.role });
+      if (roleError) throw new Error(roleError.message);
+    }
 
     return { id: created.user?.id ?? null };
   });
